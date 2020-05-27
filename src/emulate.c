@@ -4,17 +4,9 @@
 #include <stdint.h>
 #include <math.h>
 
-#define MEMORY_SIZE 64000
-#define GENERAL_REGISTERS_NUM 13
+#include "emulator_processor.h"
 
-#define INPUT_LINE_LENGTH
-
-struct machine {
-	uint8_t memory[MEMORY_SIZE];
-	uint32_t general_reg[GENERAL_REGISTERS_NUM];
-	uint32_t cpsr_reg;
-	uint32_t pc_reg;
-};
+#define TRUE 420
 
 int main(int argc, char **argv) {
 
@@ -33,19 +25,20 @@ int main(int argc, char **argv) {
 		}
 	}
 
-	// Declaration and initialization of memory and registers storage
-	//
+	// -- Declaration and initialization of memory and registers storage
+	// --
 
-	struct machine arm;
+	Machine arm;
 
 	memset(arm.memory, 0, MEMORY_SIZE * sizeof(uint8_t));
 	memset(arm.general_reg, 0, GENERAL_REGISTERS_NUM * sizeof(uint32_t));
 
 	arm.cpsr_reg = 0;
 	arm.pc_reg = 0;
+	arm.end = false;
 
-	// Store input onto memory
-	// byte-by-byte and then divide count by 4
+	// -- Store input onto memory
+	// -- byte-by-byte and then divide count by 4
 
 	int instr_count = 0;
 
@@ -60,13 +53,41 @@ int main(int argc, char **argv) {
 
 	instr_count = ceil(instr_count / 4);
 
-	// Start the pipeline
-	//
+	// -- Start the pipeline
+	// -- initialise all 3 stages to NULL
 
+	Instr fetched_instr;
+	fetched_instr.exists = false;
+	fetched_instr.instr = 0;
+	Decoded_Instr decoded_instr;
 
+	while(!arm.end) {
+		if(decoded_instr.exists) {
+			execute(&decoded_instr,&arm); // <- execute previously decoded instruction
+		}
 
-	// Print the final machine state
-	//
+		if(fetched_instr.exists) {
+			decode(&decoded_instr,&fetched_instr,&arm); // <- decode previously fetched instruction
+		}
+
+		memcpy(&fetched_instr.instr,&arm.memory[arm.pc_reg],4); // fetch from memory acc to PC
+		fetched_instr.exists = true;
+
+		if(fetched_instr.exists) {
+			// -- if fetched instruction is halt
+			// -- execute last instruction and set exit
+			if(fetched_instr.instr == 0) {
+				execute(&decoded_instr,&arm);
+				arm.end = true;
+				arm.pc_reg += 4;
+			}
+			printf("%x\n",fetched_instr.instr);
+		}
+		arm.pc_reg += 4;
+	}
+
+	// -- Print the final machine state
+	// --
 
 	printf("Registers:\n");
 	for(int i = 0; i < GENERAL_REGISTERS_NUM; i++) {
@@ -74,8 +95,9 @@ int main(int argc, char **argv) {
 	}
 	printf("PC  : %*d (%#010x)\n",10,arm.pc_reg,arm.pc_reg);
 	printf("CPSR: %*d (%#010x)\n",10,arm.cpsr_reg,arm.cpsr_reg);
-	printf("Non-zero memory:\n");
+
 	int val;
+	printf("Non-zero memory:\n");
 	for(int i = 0; i < MEMORY_SIZE / 4; i++) {
 		memcpy(&val,&arm.memory[4*i],4);
 		if(val) {
