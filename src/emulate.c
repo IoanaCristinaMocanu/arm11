@@ -58,7 +58,7 @@ int main(int argc, char **argv) {
 
 	Instr fetched_instr;
 	fetched_instr.exists = false;
-	fetched_instr.instr = 0;
+	fetched_instr.bits = 0;
 	Decoded_Instr decoded_instr;
 
 	while(!arm.end) {
@@ -70,18 +70,18 @@ int main(int argc, char **argv) {
 			decode(&decoded_instr,&fetched_instr,&arm); // <- decode previously fetched instruction
 		}
 
-		memcpy(&fetched_instr.instr,&arm.memory[arm.pc_reg],4); // fetch from memory acc to PC
+		memcpy(&fetched_instr.bits,&arm.memory[arm.pc_reg],4); // fetch from memory acc to PC
 		fetched_instr.exists = true;
 
 		if(fetched_instr.exists) {
 			// -- if fetched instruction is halt
 			// -- execute last instruction and set exit
-			if(fetched_instr.instr == 0) {
+			if(fetched_instr.bits == 0) {
 				execute(&decoded_instr,&arm);
 				arm.end = true;
 				arm.pc_reg += 4;
 			}
-			printf("%x\n",fetched_instr.instr);
+			printf("%x\n",fetched_instr.bits);
 		}
 		arm.pc_reg += 4;
 	}
