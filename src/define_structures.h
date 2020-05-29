@@ -2,8 +2,8 @@
 // Created by bianca on 5/28/20.
 //
 
-#ifndef ARM11_18_DEFINE_TYPES_H
-#define ARM11_18_DEFINE_TYPES_H
+#ifndef ARM11_18_DEFINE_STRUCTURES_H
+#define ARM11_18_DEFINE_STRUCTURES_H
 #define MEMORY_SIZE 64000
 #define GENERAL_REGISTERS_NUM 13
 
@@ -26,34 +26,46 @@ enum cond {
     al = 0b1110
 };
 
-enum type{
+enum type {
     DATA_PROC,
     MUL,
     TRANSFER,
     BRANCH,
-    NOOP = 0xffffffff
+
 };
 struct Decoded_Instr {
+    //for all
     bool exists;
     enum cond cond;
-    enum type type; // 4 main types of instr + noop
+    enum type type; // 4 main types of instr
+
+    //for data processing
+    uint32_t opcode;
+    uint32_t op2;
+
+    //for multiply
+    bool accumulate;
+    uint32_t rs;
+    uint32_t rm;
+
+    //for single data transfer
+    bool p_index;
+    bool up;
+    bool load;
+
+    //for data processing, multiply and single data transfer
     uint8_t rn;
     uint8_t rd;
-    uint32_t offset;
 
-    // data processing
-    uint32_t op2;
+    //for single data transfer and multiply
+    bool immediate;
+
+    //for data processing and multiply
     bool set;
 
-    //multiply
-    uint32_t rm_val;
-    uint32_t rs_val;
+    //for single data transfer and branch
+    uint32_t offset;
 
-    // single data transfer
-    bool imm;
-    bool pre;
-    bool load;
-    bool up;
 };
 typedef struct Decoded_Instr Decoded_Instr;
 
@@ -63,4 +75,4 @@ struct Instr {
 };
 typedef struct Instr Instr;
 
-#endif //ARM11_18_DEFINE_TYPES_H
+#endif //ARM11_18_DEFINE_STRUCTURES_H
