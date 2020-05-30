@@ -43,7 +43,7 @@ enum type get_instr_type(Instr *instruction) {
 //FOR DATA PROCESSING ONLY
 //return Opcode
 uint32_t get_opcode(Instr *instruction) {
-	return (OPCODE_MASK & instruction->bits) >> OPCODE_POS;
+	return ((OPCODE_MASK << OPCODE_POS) & instruction->bits) >> OPCODE_POS;
 }
 
 //return Operand2
@@ -59,17 +59,17 @@ bool to_accumulate(Instr *instruction) {
 
 //return Rn
 uint32_t get_rn_MUL(Instr *instruction) {
-	return (RN_MUL_MASK & instruction->bits) >> RN_MUL_POS;
+	return ((RN_MUL_MASK << RN_MUL_POS) & instruction->bits) >> RN_MUL_POS;
 }
 
 // return Rd
 uint32_t get_rd_MUL(Instr *instruction) {
-	return (RD_MUL_MASK & instruction->bits) >> RD_MUL_POS;
+	return ((RD_MUL_MASK << RD_MUL_POS) & instruction->bits) >> RD_MUL_POS;
 }
 
 //return Rs
 uint32_t get_rs_MUL(Instr *instruction) {
-	return (RS_MUL_MASK & instruction->bits) >> RS_MUL_POS;
+	return ((RS_MUL_MASK << RS_MUL_POS) & instruction->bits) >> RS_MUL_POS;
 }
 
 //Return Rm
@@ -114,12 +114,12 @@ bool is_immediate(Instr *instruction) {
 
 //return Rn
 uint32_t get_rn(Instr *instruction) {
-	return (RN_MASK & instruction->bits) >> RN_POS;
+	return ((RN_MASK << RN_POS) & instruction->bits) >> RN_POS;
 }
 
 //return Rd
 uint32_t get_rd(Instr *instruction) {
-	return (RD_MASK & instruction->bits) >> RD_POS;
+	return ((RD_MASK << RD_POS) & instruction->bits) >> RD_POS;
 }
 
 
@@ -127,4 +127,14 @@ uint32_t get_rd(Instr *instruction) {
 //check Set Condition Codes bit
 bool is_set(Instr *instruction) {
 	return (SET_COND_CODES & instruction->bits);
+}
+
+void print_bits(uint32_t val){
+	uint32_t mask = 1 << 31;
+	for(int i = 0; i < 32; i++) {
+		int b = val & mask;
+		printf("%d",b != 0);
+		mask = mask >> 1;
+	}
+	printf("\n");
 }

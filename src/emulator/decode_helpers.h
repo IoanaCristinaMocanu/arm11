@@ -13,15 +13,15 @@
 
 //for Data Processing ONLY
 #define OPERAND2_MASK 0xfff // for bits 0-11
-#define OPCODE_MASK 0x1e0000 //for bits 21-24
+#define OPCODE_MASK 0xf //for bits 21-24
 #define OPCODE_POS 21
 
 //for Multiply ONLY
 #define ACCUMULATE 1 << 21
-#define RD_MUL_MASK 0xf0000 //for bits 16-19
-#define RN_MUL_MASK 0xf000 //for bits 12-15
-#define RS_MUL_MASK 0xf00 // for bits 8-11
-#define RM_MUL_MASK 15 //for bits 0-3
+#define RD_MUL_MASK 0xf //for bits 16-19
+#define RN_MUL_MASK 0xf //for bits 12-15
+#define RS_MUL_MASK 0xf // for bits 8-11
+#define RM_MUL_MASK 0xf //for bits 0-3
 #define RD_MUL_POS 16
 #define RN_MUL_POS 12
 #define RS_MUL_POS 8
@@ -37,8 +37,8 @@
 
 //for Data Processing and Single Data Transfer
 #define IMMEDIATE_MASK 1 << 25
-#define RN_MASK 0xf0000 //for bits 16-19
-#define RD_MASK 0xf000 //for bits 12-15
+#define RN_MASK 0xf //for bits 16-19
+#define RD_MASK 0xf //for bits 12-15
 #define RN_POS 16
 #define RD_POS 12
 
@@ -114,5 +114,7 @@ uint32_t get_rd(Instr *instruction);
 //FOR DATA PROCESSING AND SINGLE DATA TRANSFER ONLY
 //check Set Condition Codes bit
 bool is_set(Instr *instruction);
+
+void print_bits(uint32_t val);
 
 #endif //ARM11_18_DECODE_HELPERS_H

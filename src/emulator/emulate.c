@@ -5,9 +5,29 @@
 #include <math.h>
 
 #include "emulator_processor.h"
+#include "decode_helpers.h"
 #include "define_structures.h"
 
 #define TRUE 420
+
+
+void print_machine_status(Machine *arm){
+	printf("Registers:\n");
+	for(int i = 0; i < GENERAL_REGISTERS_NUM; i++) {
+		printf("$%-2d : %10d (%#010x)\n",i,arm->general_reg[i],arm->general_reg[i]);
+	}
+	printf("PC  : %*d (%#010x)\n",10,arm->pc_reg,arm->pc_reg);
+	printf("CPSR: %*d (%#010x)\n",10,arm->cpsr_reg,arm->cpsr_reg);
+
+	int val;
+	printf("Non-zero memory:\n");
+	for(int i = 0; i < MEMORY_SIZE / 4; i++) {
+		memcpy(&val,&arm->memory[4*i],4);
+		if(val) {
+			printf("%#010x : %#010x\n",4*i,val);
+		}
+	}
+}
 
 int main(int argc, char **argv) {
 
@@ -72,6 +92,7 @@ int main(int argc, char **argv) {
 	while(!arm.end) {
 		if(decoded_instr.exists) {
 			execute(&decoded_instr,&arm,data_proc_func); // <- execute previously decoded instruction
+			print_machine_status(&arm);
 			if(arm.end) {
 				break; // <- exit loop if halt instruction was executed
 			}
@@ -92,8 +113,8 @@ int main(int argc, char **argv) {
 		memcpy(&fetched_instr.bits,&arm.memory[arm.pc_reg],4); // fetch from memory acc to PC
 		fetched_instr.exists = true;
 
-		if(fetched_instr.exists) {
-			printf("%x\n",fetched_instr.bits);
+		if(fetched_instr.exists && fetched_instr.bits) {
+			print_bits(fetched_instr.bits);
 		}
 		arm.pc_reg += 4;
 	}
@@ -101,21 +122,7 @@ int main(int argc, char **argv) {
 	// -- Print the final machine state
 	// --
 
-	printf("Registers:\n");
-	for(int i = 0; i < GENERAL_REGISTERS_NUM; i++) {
-		printf("$%-2d : %10d (%#010x)\n",i,arm.general_reg[i],arm.general_reg[i]);
-	}
-	printf("PC  : %*d (%#010x)\n",10,arm.pc_reg,arm.pc_reg);
-	printf("CPSR: %*d (%#010x)\n",10,arm.cpsr_reg,arm.cpsr_reg);
 
-	int val;
-	printf("Non-zero memory:\n");
-	for(int i = 0; i < MEMORY_SIZE / 4; i++) {
-		memcpy(&val,&arm.memory[4*i],4);
-		if(val) {
-			printf("%#010x : %#010x\n",4*i,val);
-		}
-	}
 
 	return EXIT_SUCCESS;
 }
