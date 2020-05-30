@@ -7,7 +7,8 @@
 #define V_MASK 1 << 28
 
 void execute(Decoded_Instr *instr, Machine *arm) {
-
+if(instr->type == DATA_PROC && check_Condition(arm, instr)){
+}
 }
 
 
