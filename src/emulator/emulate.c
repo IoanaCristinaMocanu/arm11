@@ -92,11 +92,11 @@ int main(int argc, char **argv) {
 	while(!arm.end) {
 		if(decoded_instr.exists) {
 			execute(&decoded_instr,&arm,data_proc_func); // <- execute previously decoded instruction
-			print_machine_status(&arm);
 			if(arm.end) {
 				break; // <- exit loop if halt instruction was executed
 			}
 			if(arm.branch_executed) {
+				decoded_instr.exists = false;
 				fetched_instr.exists = false; // <- if branch instruction was executed
 				arm.branch_executed = false;  // <- clear the pipeline and the checker
 			}
@@ -122,7 +122,10 @@ int main(int argc, char **argv) {
 	// -- Print the final machine state
 	// --
 
+	print_machine_status(&arm);
 
+	int32_t x = 0x0000ffff & 0x00ffffff;
+	printf("%d 0x%08x",x,x);
 
 	return EXIT_SUCCESS;
 }

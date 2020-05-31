@@ -59,14 +59,17 @@ struct Decoded_Instr {
 
 	//multiply
 	bool accum;
-	uint32_t rm_val;
-	uint32_t rs_val;
+	uint32_t rm;
+	uint32_t rs;
 
 	// single data transfer
 	bool imm;
 	bool pre_index;
 	bool load;
 	bool up;
+
+	// branch
+	int32_t sgn_offset;
 };
 typedef struct Decoded_Instr Decoded_Instr;
 

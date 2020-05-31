@@ -3,10 +3,25 @@
 //
 #include "decode_helpers.h"
 #include "define_structures.h"
+# include "emulator_processor.h"
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdbool.h>
+
+//Data processing
+
+#define IMM_MASK 0xff
+#define ROTATE_MASK (0xf << 8)
+#define SHIFT_MASK (0xff << 4)
+#define RM_MASK 0xf
+
+// Barrel shifter options
+
+#define LOGICAL_LEFT 0
+#define LOGICAL_RIGHT 1
+#define ARITHM_RIGHT 2
+#define ROTATE_RIGHT 3
 
 //FUNCTIONS:
 
@@ -102,7 +117,7 @@ uint32_t get_offset_TRANSFER(Instr *instruction) {
 
 //FOR BRANCH ONLY
 //get Offset
-uint32_t get_offset_BRANCH(Instr *instruction) {
+int32_t get_offset_BRANCH(Instr *instruction) {
 	return (OFFSET_BRANCH_MASK & instruction->bits);
 }
 
@@ -137,4 +152,35 @@ void print_bits(uint32_t val){
 		mask = mask >> 1;
 	}
 	printf("\n");
+}
+
+uint32_t decode_offset(uint32_t offset,bool imm,Machine* arm){
+	uint32_t op2;
+	if(imm) {
+		// immediate value
+		op2 = offset & IMM_MASK;
+		uint8_t rotate = offset & ROTATE_MASK;
+		op2 = barrel_shift(op2,2*rotate,ROTATE_RIGHT,arm);
+	}
+	else {
+		// shifter register value
+		uint8_t shift = offset & SHIFT_MASK;
+		uint8_t rm = offset & SHIFT_MASK;
+		uint32_t val = arm->general_reg[rm];
+
+		if(shift & 1) {
+			// constant ammount
+			uint8_t amm = (0xf1 << 3) & shift;
+			uint8_t type = (0x3 << 1) & shift;
+			op2 = barrel_shift(val,amm,type,arm);
+		}
+		else {
+			// ammount specifies by a register
+			uint8_t rs = (0xf << 4) & shift;
+			uint8_t type = (0x3 << 1) & shift;
+			uint8_t amm = arm->general_reg[rs] & 0xff;
+			op2 = barrel_shift(val,amm,type,arm);
+		}
+	}
+	return op2;
 }

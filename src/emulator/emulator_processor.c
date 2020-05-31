@@ -12,21 +12,6 @@
 #define DATA_PROC_FLAG_MASK 0111
 #define MUL_FLAG_MASK 1100
 
-//Data processing
-
-#define IMM_MASK 0xff
-#define ROTATE_MASK (0xf << 8)
-#define SHIFT_MASK (0xff << 4)
-#define RM_MASK 0xf
-
-
-// Barrel shifter options
-
-#define LOGICAL_LEFT 0
-#define LOGICAL_RIGHT 1
-#define ARITHM_RIGHT 2
-#define ROTATE_RIGHT 3
-
 // --
 // -- Instruction execution
 // --
@@ -37,43 +22,11 @@ void data_process(Decoded_Instr* instr, Machine* arm, ProcFunc data_proc_func[14
 	uint32_t op1 = arm->general_reg[instr->rn];
 	uint8_t code = instr->opcode;
 	ProcFunc func = data_proc_func[code];
-	uint32_t op2;
-
-	if(instr->imm) {
-		// immediate value
-		op2 = instr->op2 & IMM_MASK;
-		uint8_t rotate = instr->op2 & ROTATE_MASK;
-		op2 = barrel_shift(op2,2*rotate,ROTATE_RIGHT,arm);
-	}
-	else {
-		// shifter register value
-		uint8_t shift = instr->op2 & SHIFT_MASK;
-		uint8_t rm = instr->op2 & SHIFT_MASK;
-		uint32_t val = arm->general_reg[rm];
-
-		if(shift & 1) {
-			// constant ammount
-			uint8_t amm = (0xf1 << 3) & shift;
-			uint8_t type = (0x3 << 1) & shift;
-			op2 = barrel_shift(val,amm,type,arm);
-		}
-		else {
-			// ammount specifies by a register
-			uint8_t rs = (0xf << 4) & shift;
-			uint8_t type = (0x3 << 1) & shift;
-			uint8_t amm = arm->general_reg[rs] & 0xff;
-			op2 = barrel_shift(val,amm,type,arm);
-		}
-	}
-
+	uint32_t op2 = decode_offset(instr->op2,instr->imm,arm);
 	uint32_t res = func(op1, op2, instr->set, arm);
+
 	if(code != 8 && code != 9 && code != 10) {
-		int pos = instr->rd;
-		printf("POS: %x %x\n",pos,res);
-		memcpy(&arm->general_reg[instr->rd + 0],&res,sizeof(uint32_t));
-		// !!!!!!
-		// does only work for +1 or +2 or -1 or whatever but never just instr->rd !!!!!!!!!!!!!!!
-		// !!!!!!
+		arm->general_reg[instr->rd] = res;
 	}
 	return;
 }
@@ -212,14 +165,13 @@ void init_data_proc_func(ProcFunc func_array[14]) {
 
 void multiply(Decoded_Instr *instr, Machine *arm) {
 	uint32_t result;
+	uint32_t rs = arm->general_reg[instr->rs];
+	uint32_t rm = arm->general_reg[instr->rm];
+	result = rm * rs;
 	if (instr->accum) {
-		result = instr->rm_val * instr->rs_val + arm->general_reg[instr->rn];
-		arm->general_reg[instr->rd] = result;
+		result += arm->general_reg[instr->rn];
 	}
-	else {
-		result = instr->rm_val * instr->rs_val;
-		arm->general_reg[instr->rd] = result;
-	}
+	arm->general_reg[instr->rd] = result;
 }
 
 //Barrel shifter
@@ -282,22 +234,60 @@ uint32_t barrel_shift(uint32_t to_shift,uint8_t ammount,uint8_t type,Machine *ar
 // -- Single data transfer instruction
 
 void data_transfer(Decoded_Instr *instr, Machine *arm){
-	int y;
-}
+	uint32_t offset = decode_offset(instr->op2,instr->imm,arm);
+	if(!instr->up) {
+		offset = -offset;
+	}
+	uint32_t rn;
+	if(instr->pre_index) {
+		rn = arm->general_reg[instr->rn] + offset;
+	}
+	else {
+		rn = arm->general_reg[instr->rn];
+		arm->general_reg[instr->rn] += offset;
+	}
 
+	// assuming a valid adress in memory is provided
+	if(instr->load) {
+		memcpy(&arm->general_reg[instr->rd],&arm->memory[rn],sizeof(uint32_t));
+	}
+	else {
+		memcpy(&arm->memory[rn],&arm->general_reg[instr->rd],sizeof(uint32_t));
+	}
+
+	// TODO: check if RN is PC register !!!
+}
 // -- Branch Instruction
 
 void branch(Decoded_Instr *instr, Machine *arm){
-	int y = 0;
+	int32_t val = instr->sgn_offset;
+	val = val << 2;
+	if(val & (1 << 23)) {
+		val |= (0xff << 24);
+	}
+	else {
+		val &= ~(0xff << 24);
+	}
+	val = val << 2;
+	arm->pc_reg -= 8;
+	arm->pc_reg += val;
+	arm->branch_executed = true;
 }
 
 void execute(Decoded_Instr *instr, Machine *arm, ProcFunc data_proc_func[14]) {
-	switch (instr->type) {
-	case HALT:
+	if(instr->type == HALT) {
 		arm->end = true;
 		return;
+	}
+
+	if(!check_condition(arm,instr)) {
+		return;
+	}
+
+	switch (instr->type) {
 	case DATA_PROC:
 		data_process(instr, arm, data_proc_func);
+		return;
 	case MUL:
 		multiply(instr, arm);
 		return;
@@ -328,7 +318,6 @@ void decode(Decoded_Instr *decoded, Instr *instr, Machine *arm) {
 	if (decoded->type == DATA_PROC) {
 		decoded->imm = is_immediate(instr);
 		decoded->opcode = get_opcode(instr);
-		printf("Opcode: %x\n",decoded->opcode);
 		decoded->set = is_set(instr);
 		decoded->rn = get_rn(instr);
 		decoded->rd = get_rd(instr);
@@ -338,8 +327,8 @@ void decode(Decoded_Instr *decoded, Instr *instr, Machine *arm) {
 		decoded->set = is_set(instr);
 		decoded->rd = get_rd_MUL(instr);
 		decoded->rn = get_rn_MUL(instr);
-		decoded->rs_val = get_rs_MUL(instr);     // TODO: also process
-		decoded->rm_val = get_rm_MUL(instr);     // TODO: also process
+		decoded->rs = get_rs_MUL(instr);
+		decoded->rm = get_rm_MUL(instr);
 	} else if (decoded->type == TRANSFER) {
 		decoded->imm = is_immediate(instr);
 		decoded->pre_index = is_pre_index(instr);
@@ -349,14 +338,14 @@ void decode(Decoded_Instr *decoded, Instr *instr, Machine *arm) {
 		decoded->rd = get_rn(instr);
 		decoded->offset = get_offset_TRANSFER(instr);
 	} else {
-		decoded->offset = get_offset_BRANCH(instr);
+		decoded->sgn_offset = get_offset_BRANCH(instr);
 	}
 }
 
 // extra functions - for Data Processing execution:
 // Check if the cond field is satisfied by the CPSR register
-bool check_condition(Machine *arm, Instr *instruction) {
-	uint32_t cond = get_cond(instruction);
+bool check_condition(Machine *arm, Decoded_Instr *instruction) {
+	uint32_t cond = instruction->cond;
 	uint32_t cpsr = arm->cpsr_reg;
 	uint32_t get_N = N_MASK && cpsr;
 	uint32_t get_Z = Z_MASK && cpsr;

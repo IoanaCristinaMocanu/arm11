@@ -97,7 +97,7 @@ uint32_t get_offset_TRANSFER(Instr *instruction);
 
 //FOR BRANCH ONLY
 //get Offset
-uint32_t get_offset_BRANCH(Instr *instruction);
+int32_t get_offset_BRANCH(Instr *instruction);
 
 
 //FOR DATA PROCESSING AND MULTIPLY ONLY
@@ -116,5 +116,7 @@ uint32_t get_rd(Instr *instruction);
 bool is_set(Instr *instruction);
 
 void print_bits(uint32_t val);
+
+uint32_t decode_offset(uint32_t offset,bool imm,Machine* arm);
 
 #endif //ARM11_18_DECODE_HELPERS_H

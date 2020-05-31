@@ -24,7 +24,7 @@ void decode(Decoded_Instr *decoded, Instr *instr, Machine *arm);
 
 // TODO: actual bit-wise and calculation functions
 //check if the Cond field is satisfied by the CPSR register
-bool check_condition(Machine *arm, Instr *instruction);
+bool check_condition(Machine *arm, Decoded_Instr *instruction);
 
 //set CPSR flags
 void set_flags(Machine *arm, uint8_t N, uint8_t Z, uint8_t C, uint8_t V,uint8_t update_mask);
