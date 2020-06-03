@@ -18,6 +18,7 @@ void print_machine_status(Machine *arm){
 	}
 	printf("PC  : %*d (0x%08x)\n",10,arm->pc_reg,arm->pc_reg);
 	printf("CPSR: %*d (0x%08x)\n",10,arm->cpsr_reg,arm->cpsr_reg);
+//	printf("CARRY: (0x%08x)\n",arm->shifter_carry);
 
 	int val;
 	printf("Non-zero memory:\n");
@@ -96,6 +97,9 @@ int main(int argc, char **argv) {
 	while(!arm.end) {
 		if(decoded_instr.exists) {
 			execute(&decoded_instr,&arm,data_proc_func); // <- execute previously decoded instruction
+			//print_machine_status(&arm);
+			//print_instr(&decoded_instr);
+			//printf("\n\n\n");
 			if(arm.end) {
 				break; // <- exit loop if halt instruction was executed
 			}

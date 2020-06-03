@@ -117,6 +117,8 @@ bool is_set(Instr *instruction);
 
 void print_bits(uint32_t val);
 
+void print_instr(Decoded_Instr *instr);
+
 uint32_t decode_offset(uint32_t offset,bool imm,Machine* arm);
 
 #endif //ARM11_18_DECODE_HELPERS_H

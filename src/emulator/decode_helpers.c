@@ -159,28 +159,77 @@ uint32_t decode_offset(uint32_t offset,bool imm,Machine* arm){
 	if(imm) {
 		// immediate value
 		op2 = offset & IMM_MASK;
-		uint8_t rotate = offset & ROTATE_MASK;
+		uint8_t rotate = (offset & ROTATE_MASK) >> 8;
 		op2 = barrel_shift(op2,2*rotate,ROTATE_RIGHT,arm);
 	}
 	else {
 		// shifter register value
-		uint8_t shift = offset & SHIFT_MASK;
-		uint8_t rm = offset & SHIFT_MASK;
+		uint32_t shift = (offset & SHIFT_MASK) >> 4;
+		uint8_t rm = offset & RM_MASK;
 		uint32_t val = arm->general_reg[rm];
 
-		if(shift & 1) {
-			// constant ammount
-			uint8_t amm = (0xf1 << 3) & shift;
-			uint8_t type = (0x3 << 1) & shift;
+		if(!(shift & 1)) {
+			// constant ammounts
+			uint8_t amm = ((0x1f << 3) & shift) >> 3;
+			uint8_t type = ((0x3 << 1) & shift) >> 1;
 			op2 = barrel_shift(val,amm,type,arm);
 		}
 		else {
 			// ammount specifies by a register
-			uint8_t rs = (0xf << 4) & shift;
-			uint8_t type = (0x3 << 1) & shift;
+			uint8_t rs = ((0xf << 4) & shift) >> 4;
+			uint8_t type = ((0x3 << 1) & shift) >> 1;
 			uint8_t amm = arm->general_reg[rs] & 0xff;
 			op2 = barrel_shift(val,amm,type,arm);
 		}
 	}
 	return op2;
+}
+
+void print_instr(Decoded_Instr *instr){
+	switch (instr->type) {
+	case HALT:
+		printf("EXIT...\n");
+		return;
+	case DATA_PROC:
+		printf("DATA PROCESSING\n");
+		printf("COND:%x ",instr->cond);
+		printf("RN:%x ",instr->rn);
+		printf("RD:%x ",instr->rd);
+		printf("IMM:%x ",instr->imm);
+		printf("OP2:%x ",instr->op2);
+		printf("OFFSET_OP2: ");
+		print_bits(instr->offset);
+		printf("OPCODE:%x ",instr->opcode);
+		printf("SET:%x ",instr->set);
+		return;
+	case MUL:
+		printf("MULTIPLY\n");
+		printf("COND:%x ",instr->cond);
+		printf("RN:%x ",instr->rn);
+		printf("RD:%x ",instr->rd);
+		printf("RM:%x ",instr->op2);
+		printf("RS:%x ",instr->opcode);
+		printf("ACCUM:%x ",instr->accum);
+		printf("SET:%x ",instr->set);
+		return;
+	case TRANSFER:
+		printf("DATA TRANSFER\n");
+		printf("COND:%x ",instr->cond);
+		printf("RN:%x ",instr->rn);
+		printf("RD:%x ",instr->rd);
+		printf("IMM:%x ",instr->imm);
+		printf("PRE:%x ",instr->pre_index);
+		printf("SET:%x ",instr->set);
+		printf("LOAD:%x ",instr->load);
+		printf("UP:%x ",instr->up);
+		printf("OFFSET:%x ",instr->offset);
+		return;
+	case BRANCH:
+		printf("BRANCH\n");
+		printf("COND:%x",instr->cond);
+		printf("OFFSET:%x ",instr->offset);
+		return;
+	case NOOP:
+		return;
+	}
 }
