@@ -5,6 +5,7 @@
 #ifndef ARM11_18_DECODE_HELPERS_H
 #define ARM11_18_DECODE_HELPERS_H
 #include "define_structures.h"
+#include <string.h>
 
 //CONSTANTS:
 
@@ -115,10 +116,16 @@ uint32_t get_rd(Instr *instruction);
 //check Set Condition Codes bit
 bool is_set(Instr *instruction);
 
+uint32_t decode_offset(uint32_t offset,bool imm,Machine* arm);
+
+// --
+// -- Printing and debug helpers
+// --
+
 void print_bits(uint32_t val);
 
 void print_instr(Decoded_Instr *instr);
 
-uint32_t decode_offset(uint32_t offset,bool imm,Machine* arm);
+void print_machine_status(Machine *arm);
 
 #endif //ARM11_18_DECODE_HELPERS_H

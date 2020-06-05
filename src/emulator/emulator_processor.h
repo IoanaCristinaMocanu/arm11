@@ -22,7 +22,6 @@ uint32_t barrel_shift(uint32_t to_shift,uint8_t ammount,uint8_t type,Machine *ar
 
 void decode(Decoded_Instr *decoded, Instr *instr, Machine *arm);
 
-// TODO: actual bit-wise and calculation functions
 //check if the Cond field is satisfied by the CPSR register
 bool check_condition(Machine *arm, Decoded_Instr *instruction);
 

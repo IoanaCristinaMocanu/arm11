@@ -8,32 +8,6 @@
 #include "decode_helpers.h"
 #include "define_structures.h"
 
-#define TRUE 420
-
-
-void print_machine_status(Machine *arm){
-	printf("Registers:\n");
-	for(int i = 0; i < GENERAL_REGISTERS_NUM; i++) {
-		printf("$%-2d : %10d (0x%08x)\n",i,arm->general_reg[i],arm->general_reg[i]);
-	}
-	printf("PC  : %*d (0x%08x)\n",10,arm->pc_reg,arm->pc_reg);
-	printf("CPSR: %*d (0x%08x)\n",10,arm->cpsr_reg,arm->cpsr_reg);
-//	printf("CARRY: (0x%08x)\n",arm->shifter_carry);
-
-	int val;
-	printf("Non-zero memory:\n");
-	for(int i = 0; i < MEMORY_SIZE / 4; i++) {
-		memcpy(&val,&arm->memory[4 * i],4);
-		uint8_t b0 = arm->memory[4 * i];
-		uint8_t b1 = arm->memory[4 * i + 1];
-		uint8_t b2 = arm->memory[4 * i + 2];
-		uint8_t b3 = arm->memory[4 * i + 3];
-		if(val) {
-			printf("0x%08x: 0x%02x%02x%02x%02x\n",4*i,b0,b1,b2,b3);
-		}
-	}
-}
-
 int main(int argc, char **argv) {
 
 	// Argument check and file read
