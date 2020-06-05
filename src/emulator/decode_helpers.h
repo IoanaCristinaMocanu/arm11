@@ -5,49 +5,6 @@
 #ifndef ARM11_18_DECODE_HELPERS_H
 #define ARM11_18_DECODE_HELPERS_H
 #include "define_structures.h"
-#include <string.h>
-
-//CONSTANTS:
-
-//for all types of instruction
-#define COND_POS 28
-
-//for Data Processing ONLY
-#define OPERAND2_MASK 0xfff // for bits 0-11
-#define OPCODE_MASK 0xf //for bits 21-24
-#define OPCODE_POS 21
-
-//for Multiply ONLY
-#define ACCUMULATE 1 << 21
-#define RD_MUL_MASK 0xf //for bits 16-19
-#define RN_MUL_MASK 0xf //for bits 12-15
-#define RS_MUL_MASK 0xf // for bits 8-11
-#define RM_MUL_MASK 0xf //for bits 0-3
-#define RD_MUL_POS 16
-#define RN_MUL_POS 12
-#define RS_MUL_POS 8
-
-//for Single Data Transfer ONLY
-#define P_INDEXING_MASK 1 << 24
-#define UP_MASK 1 << 23
-#define LOAD_MASK 1 << 20
-#define OFFSET_TRANSFER_MASK 0xfff // for bits 0-11
-
-//for Branch ONLY
-#define OFFSET_BRANCH_MASK 0xFFFFFF //for bits 0-23
-
-//for Data Processing and Single Data Transfer
-#define IMMEDIATE_MASK 1 << 25
-#define RN_MASK 0xf //for bits 16-19
-#define RD_MASK 0xf //for bits 12-15
-#define RN_POS 16
-#define RD_POS 12
-
-//for Data Processing and Multiply
-#define SET_COND_CODES 1 << 20
-
-
-//FUNCTIONS:
 
 //FOR ALL TYPES OF INSTRUCTIONS
 //return condition bits
@@ -112,9 +69,12 @@ uint32_t get_rn(Instr *instruction);
 uint32_t get_rd(Instr *instruction);
 
 
-//FOR DATA PROCESSING AND SINGLE DATA TRANSFER ONLY
-//check Set Condition Codes bit
+// FOR DATA PROCESSING AND SINGLE DATA TRANSFER ONLY
+// check Set Condition Codes bit
 bool is_set(Instr *instruction);
+
+// -- decodes the shifted register value provided in data processing
+// and data transfer instructions
 
 uint32_t decode_offset(uint32_t offset,bool imm,Machine* arm);
 

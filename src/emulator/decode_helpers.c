@@ -9,6 +9,45 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
+//CONSTANTS:
+
+//for all types of instruction
+#define COND_POS 28
+
+//for Data Processing ONLY
+#define OPERAND2_MASK 0xfff // for bits 0-11
+#define OPCODE_MASK 0xf //for bits 21-24
+#define OPCODE_POS 21
+
+//for Multiply ONLY
+#define ACCUMULATE 1 << 21
+#define RD_MUL_MASK 0xf //for bits 16-19
+#define RN_MUL_MASK 0xf //for bits 12-15
+#define RS_MUL_MASK 0xf // for bits 8-11
+#define RM_MUL_MASK 0xf //for bits 0-3
+#define RD_MUL_POS 16
+#define RN_MUL_POS 12
+#define RS_MUL_POS 8
+
+//for Single Data Transfer ONLY
+#define P_INDEXING_MASK 1 << 24
+#define UP_MASK 1 << 23
+#define LOAD_MASK 1 << 20
+#define OFFSET_TRANSFER_MASK 0xfff // for bits 0-11
+
+//for Branch ONLY
+#define OFFSET_BRANCH_MASK 0xFFFFFF //for bits 0-23
+
+//for Data Processing and Single Data Transfer
+#define IMMEDIATE_MASK 1 << 25
+#define RN_MASK 0xf //for bits 16-19
+#define RD_MASK 0xf //for bits 12-15
+#define RN_POS 16
+#define RD_POS 12
+
+//for Data Processing and Multiply
+#define SET_COND_CODES 1 << 20
+
 //Data processing
 
 #define IMM_MASK 0xff
@@ -23,15 +62,14 @@
 #define ARITHM_RIGHT 2
 #define ROTATE_RIGHT 3
 
-//FUNCTIONS:
+// -- FOR ALL TYPES OF INSTRUCTIONS
 
-//FOR ALL TYPES OF INSTRUCTIONS
-//return condition bits
+// return condition bits
 uint32_t get_cond(Instr *instruction) {
 	return (instruction->bits) >> COND_POS;
 }
 
-//return condition type
+// return condition type
 enum type get_instr_type(Instr *instruction) {
 	if(instruction->bits == 0) {
 		return HALT;
@@ -55,24 +93,24 @@ enum type get_instr_type(Instr *instruction) {
 }
 
 
-//FOR DATA PROCESSING ONLY
-//return Opcode
+// -- DATA PROCESSING ONLY
+// return Opcode
 uint32_t get_opcode(Instr *instruction) {
 	return ((OPCODE_MASK << OPCODE_POS) & instruction->bits) >> OPCODE_POS;
 }
 
-//return Operand2
+// return Operand2
 uint32_t get_operand2(Instr *instruction) {
 	return (OPERAND2_MASK & instruction->bits);
 }
 
-//FOR MULTIPLY ONLY
-//check if it should accumulate
+// -- MULTIPLY ONLY
+// check if it should accumulate
 bool to_accumulate(Instr *instruction) {
 	return (ACCUMULATE & instruction->bits);
 }
 
-//return Rn
+// return Rn
 uint32_t get_rn_MUL(Instr *instruction) {
 	return ((RN_MUL_MASK << RN_MUL_POS) & instruction->bits) >> RN_MUL_POS;
 }
@@ -82,67 +120,69 @@ uint32_t get_rd_MUL(Instr *instruction) {
 	return ((RD_MUL_MASK << RD_MUL_POS) & instruction->bits) >> RD_MUL_POS;
 }
 
-//return Rs
+// return Rs
 uint32_t get_rs_MUL(Instr *instruction) {
 	return ((RS_MUL_MASK << RS_MUL_POS) & instruction->bits) >> RS_MUL_POS;
 }
 
-//Return Rm
+// return Rm
 uint32_t get_rm_MUL(Instr *instruction) {
 	return (RM_MUL_MASK & instruction->bits);
 }
 
 
-//FOR SINGLE DATA TRANSFER ONLY
-//check Pre/Post-indexing bit
+// -- SINGLE DATA TRANSFER ONLY
+// check Pre/Post-indexing bit
 bool is_pre_index(Instr *instruction) {
 	return (P_INDEXING_MASK & instruction->bits);
 }
 
-//check Up bit
+// check Up bit
 bool is_up(Instr *instruction) {
 	return (UP_MASK & instruction->bits);
 }
 
-//check Load bit
+// check Load bit
 bool is_load(Instr *instruction) {
 	return (LOAD_MASK & instruction->bits);
 }
 
-//getOffset
+// getOffset
 uint32_t get_offset_TRANSFER(Instr *instruction) {
 	return (OFFSET_TRANSFER_MASK & instruction->bits);
 }
 
-
-//FOR BRANCH ONLY
-//get Offset
+// -- BRANCH ONLY
+// get Offset
 int32_t get_offset_BRANCH(Instr *instruction) {
 	return (OFFSET_BRANCH_MASK & instruction->bits);
 }
 
-//FOR DATA PROCESSING AND MULTIPLY ONLY
-//check Immediate bit
+// -- DATA PROCESSING AND MULTIPLY ONLY
+// check Immediate bit
 bool is_immediate(Instr *instruction) {
 	return (IMMEDIATE_MASK & instruction->bits);
 }
 
-//return Rn
+// return Rn
 uint32_t get_rn(Instr *instruction) {
 	return ((RN_MASK << RN_POS) & instruction->bits) >> RN_POS;
 }
 
-//return Rd
+// return Rd
 uint32_t get_rd(Instr *instruction) {
 	return ((RD_MASK << RD_POS) & instruction->bits) >> RD_POS;
 }
 
 
-//FOR DATA PROCESSING AND SINGLE DATA TRANSFER ONLY
-//check Set Condition Codes bit
+// -- DATA PROCESSING AND SINGLE DATA TRANSFER ONLY
+// check Set Condition Codes bit
 bool is_set(Instr *instruction) {
 	return (SET_COND_CODES & instruction->bits);
 }
+
+// -- PRINTING HELPERS
+//
 
 void print_bits(uint32_t val){
 	uint32_t mask = 1 << 31;
@@ -233,6 +273,8 @@ void print_instr(Decoded_Instr *instr){
 		return;
 	}
 }
+
+// print machine status according to test format
 
 void print_machine_status(Machine *arm){
 	printf("Registers:\n");
