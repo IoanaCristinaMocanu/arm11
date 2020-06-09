@@ -1,0 +1,1 @@
+/usr/bin/cc -g   CMakeFiles/arm11_18.dir/src/assembler_utils/arrays_of_strings.c.o CMakeFiles/arm11_18.dir/src/assembler_utils/symbol_table.c.o CMakeFiles/arm11_18.dir/src/assemble.c.o CMakeFiles/arm11_18.dir/src/emulate.c.o CMakeFiles/arm11_18.dir/src/emulator_processor.c.o CMakeFiles/arm11_18.dir/src/emulator_utils.c.o  -o arm11_18 
