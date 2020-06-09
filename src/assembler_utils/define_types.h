@@ -42,7 +42,7 @@ typedef enum {
     SHIFT_LSL = 0x0,
     SHIFT_LSR = 0x1,
     SHIFT_ASR = 0x2,
-    SHIFT_ROR = 0X3,
+    SHIFT_ROR = 0x3,
     NO_SHIFT
 } shift_t;
 
@@ -63,11 +63,11 @@ typedef enum {
  * encoded shift
  */
 typedef struct {
-    int format;
+    uint8_t format;
     shift_t type;
     union {
-        unsigned int regist;
-        int expression;
+        uint8_t regist;
+        uint8_t expression;
     };
 } Shift;
 
@@ -75,11 +75,11 @@ typedef struct {
  * encoded operand2
  */
 typedef struct {
-    int immediate;
+    bool immediate;
     union {
-        int expression;
+        uint8_t expression;
         struct {
-            int rm;
+            uint8_t rm;
             Shift shift;
         } shifted_register;
     };
@@ -90,18 +90,18 @@ typedef struct {
  */
 
 typedef struct {
-    int format;
+    uint8_t format;
     union {
-        int expression;
+        uint8_t expression;
         struct {
-            int format;
-            int pre_post_index;
-            int rn;
+            uint8_t format;
+            bool pre_post_index;
+            uint8_t rn;
             union {
-                int expression;
+                uint8_t expression;
                 struct {
-                    int pm;
-                    unsigned int rm;
+                    uint8_t pm;
+                    uint8_t rm;
                     Shift shift;
                 } Shift;
             };
@@ -114,25 +114,25 @@ typedef struct {
  */
 
 typedef struct {
-    unsigned int address;
+//    unsigned int address;
     mnemonic_t opcode;
-    unsigned char num_args;
-    int flag;
+//    unsigned char num_args;
+    bool flag;
     condition_t condition;
     union {
         struct {
-            unsigned int rd;
-            unsigned int rn;
+            uint8_t rd;
+            uint8_t int rn;
             Operand2 op2;
         } data_processing;
         struct {
-            unsigned int rd;
-            unsigned int rm;
-            unsigned int rs;
-            unsigned int rn;
+            uint8_t rd;
+            uint8_t rm;
+            uint8_t rs;
+            uint8_t rn;
         } multiply;
         struct {
-            unsigned int rd;
+            uint8_t rd;
             Address address;
         } transfer;
         struct {
