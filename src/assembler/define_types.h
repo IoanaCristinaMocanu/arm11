@@ -115,7 +115,7 @@ typedef struct {
  */
 
 typedef struct {
-//    unsigned int address;
+    uint16_t address;
     mnemonic_t opcode;
 //    unsigned char num_args;
     bool flag;
