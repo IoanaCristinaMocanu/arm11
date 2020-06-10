@@ -165,7 +165,7 @@ void data_transfer_to_bits(Token *token, uint32_t *binary, uint16_t address) {
 void branch_to_bits(Token *token, uint32_t *binary, label_dict *dict) {
     assert(token != NULL);
     to_bits(binary, 0xa, BRANCH_BITS_POS); //for 1010 in buts 24-27 in branch instruction
-    int label_address =
+    int label_address = query("label",dict) * 4;
     int diff = label_address - ((int) token->address) - 8; //-8 because of the ARM pipeline
     diff >>= 2;
     diff &= 0x00ffffff; //all 1s
