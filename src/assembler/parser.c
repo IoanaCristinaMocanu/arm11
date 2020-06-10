@@ -8,10 +8,38 @@
 #include "parser.h"
 #include "define_types.h"
 
+static mnemonic_t string_to_mnemonic(const char *string);
+
+static shift_t string_to_shift(const char *string);
+
+static void parse_branch(Token *token, const char *label);
+
+static Address parse_address(const char *string_address, Token *token);
+
+static Operand2 parse_operand2(char *operand);
+
+static Shift parse_shift(const char *shift);
+
+static void parse_data_processing(Token *token, const char *arguments);
+
+static void parse_multiply(Token *token, const char *string_multiply);
+
+static void parse_transfer(Token *token, const char *string_transfer);
+
+static void parse_special(Token *token, const char *string);
+
+static int parse_expression(const char *expression);
+
+static char *skip_whitespace(const char *string);
+
+static char *split(char *pointers, char separator, unsigned int number_occurrence);
+
+static char **split_and_store(char *pointers, char *separator, unsigned int number_occurrences);
+
 /*
  * returns the corresponding enum of a given string_opcode
  */
-mnemonic_t string_to_mnemonic(const char *string) {
+static mnemonic_t string_to_mnemonic(const char *string) {
     if (!strcmp(string, "add")) {
         return ADD;
     }
@@ -108,7 +136,7 @@ mnemonic_t string_to_mnemonic(const char *string) {
 }
 
 
-void parse_branch(Token *token, const char *label) {
+static void parse_branch(Token *token, const char *label) {
     assert(token != NULL);
     assert(label != NULL);
 
@@ -142,7 +170,7 @@ void parse_branch(Token *token, const char *label) {
     token->Content.branch.expression = (char *) label;
 }
 
-Address parse_address(const char *string_address, Token *token) {
+static Address parse_address(const char *string_address, Token *token) {
 
     Address address;
     if (string_address[0] == '=') { //expression
@@ -169,7 +197,7 @@ Address parse_address(const char *string_address, Token *token) {
     char *copy_address = calloc(strlen(string_address) + 1, sizeof(char));
     strcpy(copy_address, string_address + 1);
 
-    char *rm_expression = split(&copy_address, ',', 1);
+    char *rm_expression = split(copy_address, ',', 1);
     rm_expression = skip_whitespace(rm_expression);
 
     if (!strcmp(rm_expression, "")) {
@@ -193,7 +221,7 @@ Address parse_address(const char *string_address, Token *token) {
 
             address.Expression.Register.Offset.Shift.rm = atoi(skip_whitespace(rm_expression) + 1);
 
-            char *new_shift = split(&rm_expression, ',', 1);
+            char *new_shift = split(rm_expression, ',', 1);
 
             if (!(strcmp(new_shift, ""))) {
                 Shift no_shift;
@@ -212,7 +240,7 @@ Address parse_address(const char *string_address, Token *token) {
 /*
  * parses an operand2 which is either a shifted register or #expression
  */
-Operand2 parse_operand2(const char *operand) {
+static Operand2 parse_operand2(char *operand) {
     Operand2 operand2;
     if (operand[0] == '#') {
         operand2.immediate = 1;
@@ -221,7 +249,7 @@ Operand2 parse_operand2(const char *operand) {
         operand2.immediate = 0;
         operand2.Register.shifted_register.rm = atoi(operand + 1);
 
-        char *shft = split((char **) &operand, ' ', 1);
+        char *shft = strtok(operand," ");
         if (strcmp(shft, "")) {
             operand2.Register.shifted_register.shift = parse_shift(skip_whitespace(shft));
         }
@@ -232,7 +260,7 @@ Operand2 parse_operand2(const char *operand) {
 /*
  * parses a data processing instruction
  */
-void parse_data_processing(Token *token, const char *string) {
+static void parse_data_processing(Token *token, const char *string) {
 
     char *copy_string = calloc(strlen(string) + 1, sizeof(char));
     strcpy(copy_string, string);
@@ -240,20 +268,20 @@ void parse_data_processing(Token *token, const char *string) {
 
     switch (token->opcode) {
         case MOV:
-            operand2 = split(&copy_string, ',', 1);
+            operand2 = split(copy_string, ',', 1);
             token->Content.data_processing.rd = atoi(copy_string + 1);
             break;
         case TST:
         case TEQ:
         case CMP:
         case LSL:
-            operand2 = split(&copy_string, ',', 1);
+            operand2 = split(copy_string, ',', 1);
             token->Content.data_processing.rn = atoi(copy_string + 1);
             break;
         case ANDEQ:
             token->condition = EQ;
         default:
-            operand2 = split(&copy_string, ',', 2);
+            operand2 = split(copy_string, ',', 2);
             token->Content.data_processing.rd = atoi(copy_string + 1);
             token->Content.data_processing.rn = atoi(copy_string + 4);
     }
@@ -261,12 +289,12 @@ void parse_data_processing(Token *token, const char *string) {
     free(copy_string);
 }
 
-void parse_transfer(Token *token, const char *string_transfer) {
+static void parse_transfer(Token *token, const char *string_transfer) {
     token->Content.transfer.rd = atoi(string_transfer);
 
     char *copy_transfer = calloc(strlen(string_transfer) + 1, sizeof(char));
     strcpy(copy_transfer, string_transfer);
-    char *copy_transfer_split = split(&copy_transfer, ',', 1);
+    char *copy_transfer_split = split(copy_transfer, ',', 1);
     token->Content.transfer.address = parse_address(skip_whitespace(copy_transfer_split), token);
     free(copy_transfer_split);
 }
@@ -274,12 +302,12 @@ void parse_transfer(Token *token, const char *string_transfer) {
 /*
  * parses special instructions (andeq, lsl)
  */
-void parse_special(Token *token, const char *string) {
+static void parse_special(Token *token, const char *string) {
     char *copy_string = malloc(strlen(string) + 1);
     strcpy(copy_string, string);
     char *operand2;
 
-    operand2 = split(&copy_string, ',', 1);
+    operand2 = split(copy_string, ',', 1);
     token->Content.data_processing.rd = atoi(copy_string) + 1;
     token->Content.data_processing.op2 = parse_operand2(operand2);
     free(copy_string);
@@ -306,7 +334,7 @@ static int parse_expression(const char *expression) {
 /*
  * returns the corresponding enum of a given string_shift
  */
-shift_t string_to_shift(const char *string) {
+static shift_t string_to_shift(const char *string) {
     if (!strcmp(string, "lsl")) {
         return SHIFT_LSL;
     }
@@ -326,13 +354,13 @@ shift_t string_to_shift(const char *string) {
 /*
  * parses a shift
  */
-Shift parse_shift(const char *shift) {
+static Shift parse_shift(const char *shift) {
     Shift shift1;
     shift1.type = string_to_shift(shift);
 
     char *copy_shift = calloc(strlen(shift) + 1, sizeof(char));
     strcpy(copy_shift, shift);
-    char *copy_shift_split = split(&copy_shift, ' ', 1);
+    char *copy_shift_split = split(copy_shift, ' ', 1);
     if (copy_shift_split[0] == 'r') {
         shift1.format = 1;
         shift1.args.expression = parse_expression(copy_shift_split);
@@ -342,11 +370,11 @@ Shift parse_shift(const char *shift) {
     return shift1;
 }
 
-void parse_multiply(Token *token, const char *string_multiply) {
+static void parse_multiply(Token *token, const char *string_multiply) {
     char *copy_multiply = calloc(strlen(string_multiply) + 1, sizeof(char));
     strcpy(copy_multiply, string_multiply);
 
-    char **tokens = split_and_store(&copy_multiply, ",", 3);
+    char **tokens = split_and_store(copy_multiply, ",", 3);
     token->Content.multiply.rd = atoi(tokens[0] + 1);
     token->Content.multiply.rm = atoi(tokens[1] + 1);
     token->Content.multiply.rs = atoi(tokens[2] + 1);
@@ -365,8 +393,8 @@ void parse_general(Token *token, char *instruction) {
     assert(instruction != NULL);
 
     //arguments after opcode
-    char *args = split(&instruction, ' ', 1);
-
+    char *args = strtok(instruction," ");
+    printf("%s\n",instruction);
     mnemonic_t operation = string_to_mnemonic(instruction);
 
     token->opcode = operation;
@@ -398,7 +426,7 @@ void parse_general(Token *token, char *instruction) {
 /*
  * returns a pointer to the address of the first non-whitespace character in a string
  */
-char *skip_whitespace(const char *string) {
+static char *skip_whitespace(const char *string) {
     char *copy_string = (char *) string;
     while (isspace(*copy_string)) {
         strcpy(copy_string, copy_string + 1);
@@ -410,23 +438,23 @@ char *skip_whitespace(const char *string) {
  * splits a string by a given separator, replacing it with '\0', like strtok,
  * but only for a number of  occurences
  */
-char *split(char **pointers, char separator, unsigned int number_occurrence) {
+static char *split(char *pointers, char separator, unsigned int number_occurrence) {
     int counter = 0, i = 0;
-    size_t length = strlen(*pointers);
+    size_t length = strlen(pointers);
     while (i < length) {
-        if ((*pointers)[i] == separator) {
+        if ((pointers)[i] == separator) {
             counter++;
             if (counter == number_occurrence)break;
         }
         i++;
     }
-    return (*pointers) + i + 1;
+    return (pointers) + i + 1;
 }
 
 /*
  * splits and stores the pointers in an array
  */
-char **split_and_store(char **pointers, char *separator, unsigned int number_occurrences) {
+static char **split_and_store(char *pointers, char *separator, unsigned int number_occurrences) {
     char **tokens = malloc(sizeof(char *) * (number_occurrences + 1));
 
     if (tokens == NULL) {
@@ -435,7 +463,7 @@ char **split_and_store(char **pointers, char *separator, unsigned int number_occ
     }
 
     unsigned int number_tokens = 0;
-    while ((tokens[number_tokens] = strsep(pointers, separator)) != NULL &&
+    while ((tokens[number_tokens] = strtok(pointers, separator)) != NULL &&
            number_tokens != number_occurrences) {
         number_tokens++;
     }

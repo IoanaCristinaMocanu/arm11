@@ -4,6 +4,8 @@
 
 #include "constants.h"
 #include "label_table.h"
+#include "encoder.h"
+#include "parser.h"
 
 /*
  * 1. verify the number of passed arguments
@@ -58,6 +60,8 @@ int main(int argc, char **argv) {
     FILE* output;
     output = fopen(filename_output,"wb");
     uint32_t binary;
+    Token token;
+    uint16_t adress = 0;
 
     while(!feof(input)){
       fgets(line,MAX_LINE_LENGTH,input);
@@ -65,7 +69,11 @@ int main(int argc, char **argv) {
       if(line[n - 1] == ':'){
         continue;
       }
+      printf("%s\n",line);
+      parse_general(&token,line);
+      instr_to_bits(&token,dict,adress,&binary);
       fwrite(&binary,sizeof(uint32_t),1,output);
+      adress+= 4;
     }
 
     return EXIT_SUCCESS;
