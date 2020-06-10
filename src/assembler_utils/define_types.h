@@ -10,6 +10,7 @@ typedef uint32_t instr;
  * enum to represent the mnemonic types
  */
 typedef enum {
+    //data proc
     ADD,
     SUB,
     RSB,
@@ -20,10 +21,13 @@ typedef enum {
     TST,
     TEQ,
     CMP,
+    //multiply
     MUL,
     MLA,
+    //data transfer
     LDR,
     STR,
+    //branch
     BEQ,
     BNE,
     BGE,
@@ -31,6 +35,7 @@ typedef enum {
     BGT,
     BLE,
     B,
+    //special
     LSL,
     ANDEQ
 } mnemonic_t;
@@ -139,7 +144,7 @@ typedef struct {
             char *expression;
         } branch;
     };
-} token;
+} Token;
 
 
 #endif
