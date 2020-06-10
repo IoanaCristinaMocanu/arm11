@@ -8,6 +8,8 @@
 
 #define COND_POS 28
 #define IMMEDIATE_POS 25
+#define PRE_POS 24
+#define UP_POS 23
 #define OPCODE_POS 21
 #define SET_COND_POS 20
 #define RD_POS 12
@@ -67,7 +69,7 @@ uint32_t rotate_right(uint32_t to_shift, uint8_t ammount) {
 
 void data_proc_to_bits(Token *token, uint32_t *binary) {
     assert(token != NULL);
-    (token->Content.data_processing.op2.immediate) ? to_bits(binary, 1, IMMEDIATE_POS) : (binary = 0);
+    if (token->Content.data_processing.op2.immediate) { to_bits(binary, 1, IMMEDIATE_POS); } else { binary = 0; }
     uint8_t opcode;
     switch (token->opcode) {
         case ANDEQ:
@@ -159,7 +161,30 @@ void data_transfer_to_bits(Token *token, uint16_t address, uint32_t *binary) {
     if (token->opcode == LDR) {
         to_bits(binary, 1, LOAD_POS); //set load bit
     }
-    //TODO
+    if (token->Content.transfer.address.format == 0) {
+        int expression = token->Content.transfer.address.Expression.expression;
+        if (expression < 0xff) {
+            Token token_MOV;                    //TOKEN FOR MOV
+            token_MOV.opcode = MOV;
+            token_MOV.Content.data_processing.op2.immediate = 1;
+            token_MOV.Content.data_processing.op2.Register.expression
+                    = token->Content.transfer.address.Expression.expression;
+            token_MOV.opcode = MOV;
+            *binary = 0;
+            to_bits(binary, AL, 28);
+            data_proc_to_bits(&token_MOV, binary);
+        } else {
+            int offset = ((int) address) - ((int) token->address) - 8;//PC is ahead with 8 bytes of instructions
+            to_bits(binary, 15, RN_POS);
+            to_bits(binary, 1, PRE_POS);
+            to_bits(binary, 1, UP_POS);
+            to_bits(binary, (uint32_t) offset, OFFSET_POS);
+        }
+    } else {
+        if (!token->Content.transfer.address.Expression.Register.pre_post_index)
+            to_bits(binary, 1, PRE_POS);
+        address_to_bits(token->Content.transfer.address, binary);
+    }
 }
 
 void branch_to_bits(Token *token, uint32_t *binary, label_dict *dict) {
@@ -191,7 +216,7 @@ void address_to_bits(Address address, uint32_t *binary) {
             to_bits(binary, 1, UP_POS);
             to_bits(binary, (uint32_t) address.Expression.expression, OFFSET_POS);
         } else {
-            to_bits(binary, (uint32_t)(-1 * address.Expression.expression),
+            to_bits(binary, (uint32_t) (-1 * address.Expression.expression),
                     OFFSET_POS);
         }
     } else { //op2 = register
