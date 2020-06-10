@@ -2,6 +2,7 @@
 #define ARM11_18_DEFINE_TYPES_H
 
 #include <stdint.h>
+#include <stdbool.h>
 
 typedef uint16_t address_t;
 typedef uint32_t instr;

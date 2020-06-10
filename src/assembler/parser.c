@@ -183,19 +183,19 @@ void parse_special(Token *token, const char *string) {
 static int parse_expression(const char *expression) {
     if (!strncmp(expression, "0x", 2)) { return strtol(expression + 2, NULL, 16); }
         //HEX
-    else {return strtol(expression, NULL, 10);}  //DECIMAL
-    if(!strncmp(expression,"-",1)){
-        if(!strncmp(expression+1,"0x",2)){
-            return (-1)*strtol(expression+3, NULL, 16);
+    else { return strtol(expression, NULL, 10); }  //DECIMAL
+    if (!strncmp(expression, "-", 1)) {
+        if (!strncmp(expression + 1, "0x", 2)) {
+            return (-1) * strtol(expression + 3, NULL, 16);
         }
     }
-    return (-1)*strtol(expression+1),NULL, 10);
+    return (-1) * strtol(expression + 1), NULL, 10);
 }
 
 /*
  * returns the corresponding enum of a given string_shift
  */
-shift_t string_to_shift(const char *string){
+shift_t string_to_shift(const char *string) {
     if (!strcmp(str, "lsl")) {
         return SHIFT_LSL;
     }
@@ -211,17 +211,24 @@ shift_t string_to_shift(const char *string){
 
     exit(EXIT_FAILURE);
 }
+
 /*
  * parses a shift
  */
-Shift parse_shift(const char *shift){
-Shift shift1;
-shift1.type=string_to_shift(shift);
+Shift parse_shift(const char *shift) {
+    Shift shift1;
+    shift1.type = string_to_shift(shift);
 
-char *copy_shift = calloc(strlen(shift)+1, sizeof(char ));
-strcpy(copy_shift, shift);
-char *copy_shift_split
+    char *copy_shift = calloc(strlen(shift) + 1, sizeof(char));
+    strcpy(copy_shift, shift);
+    char *copy_shift_split = split(&copy_shift, ' ', 1);
+    if (copy_shift_split[0] == 'r') {
+        shift1.format = 1;
+        shift1.expression = parse_expression(copy_shift_split);
+    }
 
+    free(copy_shift);
+    return shift1;
 }
 
 void parse_general(Token *token, char *instruction, int address);
