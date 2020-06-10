@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include "define_structures.h"
 #include "define_types.h"
 #include "encoder.h"
 
@@ -30,32 +29,32 @@
 #define SHIFT_REG_POS 8
 #define SHIFT_CONST_POS 7
 
-static void to_bits(Instr *instruction, uint32_t input, int pos) {
-    *instruction |= (input << pos);
+static void to_bits(uint32_t *binary, uint32_t input, int pos) {
+    *binary |= (input << pos);
 }
 
-Instr instr_to_bits(Token *token, symbol_table, unsigned int address) {
-    Instr instruction = 0;
-    to_bits(&instruction, token.condition, COND_POS);
-    if (token.opcode <= CMP) {
-        return data_proc_to_bits(token, &instruction);
+void instr_to_bits(Token *token,label_dict *dict, uint16_t address,uint32_t *binary) {
+    *binary = 0;
+    to_bits(binary, token->condition, COND_POS);
+    if (token->opcode <= CMP) {
+        data_proc_to_bits(token, binary);
     }
 
-    if (token.opcode <= MLA) {
-        return mul_to_bits(token, &instruction);
+    if (token->opcode <= MLA) {
+         mul_to_bits(token, binary);
     }
 
-    if (token.opcode <= STR) {
-        return data_transfer_to_bits(token, &instruction, address);
+    if (token->opcode <= STR) {
+         data_transfer_to_bits(token, address,binary);
     }
 
-    if (token.opcode <= B) {
-        return branch_to_bits(token, &instruction);
+    if (token->opcode <= B) {
+         branch_to_bits(token, binary,dict);
     }
-    if (token.opcode <= ANDEQ) {
-        return special_to_bits(token, &instruction, symbol_table);
+    if (token->opcode <= ANDEQ) {
+         special_to_bits(token, binary, dict);
     }
-    print("Invalid Token opcode passed to be encoded\n");
+    printf("Invalid Token opcode passed to be encoded\n");
     exit(EXIT_FAILURE);
 }
 
@@ -67,9 +66,9 @@ uint32_t rotate_right(uint32_t to_shift, uint8_t ammount) {
     return top | bottom;
 }
 
-Instr *data_proc_to_bits(Token *token, Instr *instruction) {
+void data_proc_to_bits(Token *token, uint32_t *binary) {
     assert(token != NULL);
-    (instruction->data_processing.op2.immediate) ? to_bits(instruction, 1, IMMEDIATE_POS) : (*instruction = 0);
+    (token->data_processing.op2.immediate) ? to_bits(binary, 1, IMMEDIATE_POS) : (binary = 0);
     uint8_t opcode;
     switch (token->opcode) {
         case ANDEQ:
@@ -104,14 +103,14 @@ Instr *data_proc_to_bits(Token *token, Instr *instruction) {
             opcode = 0xd;
             break;
         default:
-            print("Invalid Token opcode passed to be encoded\n");
+            printf("Invalid Token opcode passed to be encoded\n");
             exit(EXIT_FAILURE);
     }
-    to_bits(instruction, opcode, OPCODE_POS);
+    to_bits(binary, opcode, OPCODE_POS);
     (token->opcode == TST || token->opcode == TEQ || token->CMP) ? to_bits(instr, 1, SET_COND_POS) : to_bits(
-            instruction, token->data_processing.rd, RD_POS);
+            binary, token->data_processing.rd, RD_POS);
     if (token->opcode != MOV) {
-        to_bits(instruction, token->data_processing.rn, RN_POS);
+        to_bits(binary, token->data_processing.rn, RN_POS);
     }
     if (token->data_processing.op2.immediate) {
         int exp = token->data_processing.op2.expression;
@@ -122,115 +121,111 @@ Instr *data_proc_to_bits(Token *token, Instr *instruction) {
                 amount++;
                 rm_value = rotate_right(rotate_right, 2);
             }
-            to_bits(instruction, rm_value, OP2_POS);
-            to_bits(instruction, (uint32_t) amount, 8);
+            to_bits(binary, rm_value, OP2_POS);
+            to_bits(binary, (uint32_t) amount, 8);
         } else {
-            to_bits(instruction, (uint32_t) exp, OP2_POS);
+            to_bits(binary, (uint32_t) exp, OP2_POS);
         }
     } else {
-        to_bits(instr, (uint32_t) token->data_processing.op2.shifted_register.rm, OP2_POS);
+        to_bits(binary, (uint32_t) token->data_processing.op2.shifted_register.rm, OP2_POS);
         if (!token->data_processing.op2.shifted_register.shift.format) { //register
             shift_t type = token->data_processing.op2.shifted_register.shift.type;
-            to_bits(instruction, (uint32_t) type, SHIFT_T_POS);
+            to_bits(binary, (uint32_t) type, SHIFT_T_POS);
             if (!(token->data_processing.op2.shifted_register.shift.type == NO_SHIFT)) {
-                to_bits(instruction, 1, 4);
-                to_bits(instruction, token->data_processing.op2.shifted_register.shift.regist, 8);
+                to_bits(binary, 1, 4);
+                to_bits(binary, token->data_processing.op2.shifted_register.shift.regist, 8);
             }
         }
     }
-    return instruction;
 }
 
 
-Instr *mul_to_bits(Token *token, Instr *instruction) {
+void mul_to_bits(Token *token, uint32_t *binary) {
     assert(token != NULL);
-    to_bits(instruction, 9, 4); //for 1001 in bits 4-7 in mul instruction
-    to_bits(instruction, (uint32_t) token->multiply.rd, RD_POS_MUL);
-    to_bits(instruction, (uint32_t) token->multiply.rn, RN_POS_MUL);
-    to_bits(instruction, (uint32_t) token->multiply.rs, RS_POS_MUL);
-    to_bits(instruction, (uint32_t) token->multiply.rm, RM_POS_MUL);
+    to_bits(binary, 9, 4); //for 1001 in bits 4-7 in mul instruction
+    to_bits(binary, (uint32_t) token->multiply.rd, RD_POS_MUL);
+    to_bits(binary, (uint32_t) token->multiply.rn, RN_POS_MUL);
+    to_bits(binary, (uint32_t) token->multiply.rs, RS_POS_MUL);
+    to_bits(binary, (uint32_t) token->multiply.rm, RM_POS_MUL);
     if (token->opcode == MLA) {
-        to_bits(instruction, 1, ACCUMULATE_POS); //set accumulate bit
+        to_bits(binary, 1, ACCUMULATE_POS); //set accumulate bit
     }
-    return instruction;
 }
 
-Instr *data_transfer_to_bits(Token *token, Instr *instruction, unsigned int address) {
+void data_transfer_to_bits(Token *token, uint32_t *binary, uint16_t address) {
     assert(token != NULL);
-    to_bits(instruction, 1, 26); // bit 26 is set for data transfer
-    to_bits(instruction, (uint32_t) token->transfer.rd, RD_POS);
+    to_bits(binary, 1, 26); // bit 26 is set for data transfer
+    to_bits(binary, (uint32_t) token->transfer.rd, RD_POS);
     if (token->opcode == LDR) {
-        to_bits(instruction, 1, LOAD_POS); //set load bit
+        to_bits(binary, 1, LOAD_POS); //set load bit
     }
     //TODO
 }
 
-Instr *branch_to_bits(Token *token, Instr *instruction, symbol_table) {
+void branch_to_bits(Token *token, uint32_t *binary, label_dict *dict) {
     assert(token != NULL);
-    to_bits(instruction, 0xa, BRANCH_BITS_POS); //for 1010 in buts 24-27 in branch instruction
-    int label_address; //TODO: = lookup in symbol table for branch exp
+    to_bits(binary, 0xa, BRANCH_BITS_POS); //for 1010 in buts 24-27 in branch instruction
+    int label_address =
     int diff = label_address - ((int) token->address) - 8; //-8 because of the ARM pipeline
     diff >>= 2;
     diff &= 0x00ffffff; //all 1s
-    to_bits(instruction, (uint32_t) diff, 0);
-    return instruction;
+    to_bits(binary, (uint32_t) diff, 0);
 }
 
-Instr *special_to_bits(Token *token, Instr *instruction) { //consider lsl rn <#exp> = mov rn, rn, <#exp>
+void special_to_bits(Token *token, uint32_t *binary,label_dict *dict) { //consider lsl rn <#exp> = mov rn, rn, <#exp>
     assert(token != NULL);
     uint32_t opcode;
     opcode = 0xd; //1101
-    to_bits(instruction, opcode, 21);
-    to_bits(instruction, (uint32_t) token->data_processing.rd, RD_POS);
+    to_bits(binary, opcode, 21);
+    to_bits(binary, (uint32_t) token->data_processing.rd, RD_POS);
     //mov rn, rn, lsl <#exp>
-    to_bits(instruction, (uint32_t) token->data_processing.rd, 0);
-    to_bits(instruction, (uint32_t) token->data_processing.op2.expression, 7);
-    return instruction;
+    to_bits(binary, (uint32_t) token->data_processing.rd, 0);
+    to_bits(binary, (uint32_t) token->data_processing.op2.expression, 7);
 }
 
-Instr *address_to_bits(Address address, Instr *instruction) {
-    to_bits(instruction, (uint32_t) address.Register.rn, RN_POS); // base register
+void address_to_bits(Address address, uint32_t *binary) {
+    to_bits(binary, (uint32_t) address.Register.rn, RN_POS); // base register
 
     if (address.Register.format == 0) {
         if (address.Register.expresion >= 0) {
-            to_bits(instruction, 1, UP_POS);
-            to_bits(instruction, (uint32_t) address.Register.expression, OFFSET_POS);
+            to_bits(binary, 1, UP_POS);
+            to_bits(binary, (uint32_t) address.Register.expression, OFFSET_POS);
         } else {
-            to_bits(instruction, (uint32_t)(-1 * address.Register.expression),
+            to_bits(binary, (uint32_t)(-1 * address.Register.expression),
                     OFFSET_POS);
         }
     } else { //op2 = register
         //set flags
-        to_bits(instruction, address.Register.Shift.rm, OFFSET_POS);
-        to_bits(instruction, 1, IMMEDIATE_POS);
+        to_bits(binary, address.Register.Shift.rm, OFFSET_POS);
+        to_bits(binary, 1, IMMEDIATE_POS);
         switch (address.Register.Shift.shift.type) {   //to_bits the type of rotation, if one exists
             case ASR_SHIFT:
-                to_bits(instr, 2, SHIFT_T_POS);
+                to_bits(binary, 2, SHIFT_T_POS);
                 break;
             case LSL_SHIFT:
-                to_bits(instr, 0, SHIFT_T_POS);
+                to_bits(binary, 0, SHIFT_T_POS);
                 break;
             case LSR_SHIFT:
-                to_bits(instr, 1, SHIFT_T_POS);
+                to_bits(binary, 1, SHIFT_T_POS);
                 break;
             case ROR_SHIFT:
-                to_bits(instr, 3, SHIFT_T_POS);
+                to_bits(binary, 3, SHIFT_T_POS);
                 break;
             default:
                 break;
         }
         if (address.Register.Shift.pm == 0) { // positive offset
-            to_bits(instruction, 1, UP_POS);
+            to_bits(binary, 1, UP_POS);
         }
         if (address.Register.Shift.shift.format == 0 &&
             address.Register.Shift.shift.type !=
             NO_SHIFT) {           // shift specified by another register
-            to_bits(instruction, 1, 4);
-            to_bits(instruction, address.Register.Shift.shift.regist, SHIFT_REG_POS);
+            to_bits(binary, 1, 4);
+            to_bits(binary, address.Register.Shift.shift.regist, SHIFT_REG_POS);
         } else if (address.Register.Shift.shift.type !=
                    NO_SHIFT &&
                    address.Register.Shift.shift.format == 1) {  //shift specified by a constant
-            assign_bits(instruction, address.Register.Shift.shift.expression, SHIFT_CONST_POS);
+            assign_bits(binary, address.Register.Shift.shift.expression, SHIFT_CONST_POS);
         }
     }
 }

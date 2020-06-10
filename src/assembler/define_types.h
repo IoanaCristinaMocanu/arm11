@@ -2,6 +2,7 @@
 #define ARM11_18_DEFINE_TYPES_H
 
 #include <stdint.h>
+#include <stdbool.h>
 
 typedef uint16_t address_t;
 typedef uint32_t instr;
@@ -68,7 +69,7 @@ typedef struct {
     union {
         uint8_t regist;
         uint8_t expression;
-    };
+    } args;
 } Shift;
 
 /*
@@ -82,7 +83,7 @@ typedef struct {
             uint8_t rm;
             Shift shift;
         } shifted_register;
-    };
+    } Register;
 } Operand2;
 
 /*
@@ -104,9 +105,9 @@ typedef struct {
                     uint8_t rm;
                     Shift shift;
                 } Shift;
-            };
+            } Offset;
         } Register;
-    };
+    } Expression;
 } Address;
 
 /*
@@ -122,7 +123,7 @@ typedef struct {
     union {
         struct {
             uint8_t rd;
-            uint8_t int rn;
+            uint8_t rn;
             Operand2 op2;
         } data_processing;
         struct {
@@ -138,7 +139,7 @@ typedef struct {
         struct {
             char *expression;
         } branch;
-    };
+    } Content;
 } Token;
 
 

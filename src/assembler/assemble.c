@@ -65,9 +65,8 @@ int main(int argc, char **argv) {
       if(line[n - 1] == ':'){
         continue;
       }
-      // convert(line,&binary);
       fwrite(&binary,sizeof(uint32_t),1,output);
     }
-    
+
     return EXIT_SUCCESS;
 }

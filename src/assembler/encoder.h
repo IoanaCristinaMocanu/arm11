@@ -1,16 +1,14 @@
-#include "define_structures.h"
 #include "define_types.h"
+#include "label_table.h"
 
+void instr_to_bits(Token *token,label_dict *dict,uint16_t address,uint32_t *binary);
 
-Instr *instr_to_bits(Token token, symbol_table, unsigned int address);
+void data_proc_to_bits(Token *token, uint32_t *binary);
 
-Instr *data_proc_to_bits(Token *token, Instr *instruction);
+void mul_to_bits(Token *token, uint32_t *binary);
 
-Instr *mul_to_bits(Token *token, Instr *instruction);
+void data_transfer_to_bits(Token *token,uint16_t address,uint32_t *binary);
 
-Instr *data_transfer_to_bits(Token *token, Instr *instruction, unsigned int address);
+void branch_to_bits(Token *token, uint32_t *binary, label_dict *dict);
 
-Instr *branch_to_bits(Token *token, Instr *instruction, symbol_table);
-
-Instr* special_to_bits(Token * token, Instr* instruction);
-
+void special_to_bits(Token *token, uint32_t* binary,label_dict *dict);
