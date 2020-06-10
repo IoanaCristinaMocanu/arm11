@@ -7,6 +7,7 @@
 
 #include "define_types.h"
 #include <stdio.h>
+#include <ctype.h>
 
 mnemonic_t string_to_mnemonic(const char *string);
 
