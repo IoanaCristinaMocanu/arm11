@@ -105,9 +105,106 @@ mnemonic_t string_to_mnemonic(const char *string) {
 }
 
 
-void parse_branch(Token *token, const char *label);
+void parse_branch(Token *token, const char *label) {
+    assert(token != NULL);
+    assert(label != NULL);
 
-Address parse_address(const char *address, Token *token);
+    switch (token->opcode) {
+        case B:
+            token->condition = AL;
+            break;
+        case BEQ:
+            token->condition = EQ;
+            break;
+        case BNE:
+            token->condition = NE;
+            break;
+        case BGE:
+            token->condition = GE;
+            break;
+        case BLT:
+            token->condition = LT;
+            break;
+        case BGT:
+            token->condition = GT;
+            break;
+        case BLE:
+            token->condition = LE;
+            break;
+        default:
+            printf("Unexpected opcode", token->opcode);
+            exit(EXIT_FAILURE);
+    }
+
+    token->branch.expression = (char *) label;
+}
+
+Address parse_address(const char *string_address, Token *token) {
+
+    Address address;
+    if (string_address[0] == '=') { //expression
+        address.format = 0;
+        token->transfer.address.expression = parse_expression(string_address + 1);
+        address.expression = parse_expression(string_address + 1);
+
+        if (token->transfer.address.expression >= 256) {
+            token->flag = 1;
+        }
+
+        return address;
+    }
+
+    address.format = 1;
+    address.Register.rn = atoi(string_address + 2);
+
+    if (addressstr[strlen(string_address) - 1] == ']') {
+        address.Register.pre_post_index = 0;
+    } else {
+        address.Register.pre_post_index = 1;
+    }
+
+    char *copy_address = calloc(strlen(string_address) + 1, sizeof(char));
+    strcpy(copy_address, string_address + 1);
+
+    char *rm_expression = split(&copy_address, ',', 1);
+    rmexpr = skip_whitespace(rm_expression);
+
+    if (!strcmp(rm_expression, "")) {
+        address.Register.expression = 0;
+        address.Register.format = 0;
+
+    } else {
+
+        if (rm_expression[0] == '#') {
+            address.Register.format = 0;
+            address.Register.expression = parse_expression(skip_whitespace(rm_expression) + 1);
+        } else { //shifted register
+            address.Register.format = 1;
+
+
+            if (argscpy[0] == '+' || argscpy[0] == '-') {
+                address.Register.Shift.pm = (string_address[0] == '+' ? 0 : 1);
+                copy_address++;
+            }
+            address.Register.Shift.pm = 0;
+
+            address.Register.Shift.rm = atoi(skip_whitespace(rm_expression) + 1);
+
+            char *new_shift = split(&rm_expression, ',', 1);
+
+            if (!(strcmp(shift, ""))) {
+                Shift no_shift;
+                no_shift.type = NO_SHIFT;
+                address.Register.Shift.shift = no_shift;
+            } else {
+                address.Register.Shift.shift = parse_shift(skip_whitespace(new_shift));
+            }
+        }
+    }
+
+    free(copy_address);
+    return address;
+}
 
 /*
  * parses an operand2 which is either a shifted register or #expression
@@ -161,7 +258,15 @@ void parse_data_processing(Token *token, const char *string) {
     free(copy_string);
 }
 
-void parse_transfer(Token *token, const char *transfer);
+void parse_transfer(Token *token, const char *string_transfer) {
+    token->transfer.rd = atoi(string_transfer);
+
+    char *copy_transfer = calloc(strlen(string_transfer) + 1, sizeof(char));
+    strcpy(copy_transfer, string_transfer);
+    char *copy_transfer_split = split(&copy_transfer, ',', 1);
+    token->transfer.address = parse_address(skip_whitespace(copy_transfer_split), token);
+    free(copy_transfer_split);
+}
 
 /*
  * parses special instructions (andeq, lsl)
@@ -231,10 +336,106 @@ Shift parse_shift(const char *shift) {
     return shift1;
 }
 
-void parse_general(Token *token, char *instruction, int address);
+void parse_multiply(Token *token, const char *string_multiply) {
+    char *copy_multiply = calloc(strlen(string_multiply) + 1, sizeof(char));
+    strcpy(copy_multiply, string_multiply);
 
-char *skip_whitespace(const char *string);
+    char **tokens = split_and_store(&copy_multiply, ",", 3);
+    token->multiply.rd = atoi(tokens[0] + 1);
+    token->multiply.rm = atoi(tokens[1] + 1);
+    token->multiply.rs = atoi(tokens[2] + 1);
 
-char *split(char **pointers, char separator, unsigned int number_occurrence);
+    if (token->opcode == MLA) {
+        token->multiply.rn = atoi(tokens[3] + 1);
+    } else {
+        token->multiply.rn = 0;
+    }
+    free(copy_multiply);
+}
 
-char **split_until(char **pointers, char *separator, unsigned int number_occurrences);
+
+void parse_general(Token *token, char *instruction) {
+    assert(token != NULL);
+    assert(instr != NULL);
+
+    //arguments after opcode
+    char *args = split(&instr, ' ', 1);
+
+    mnemonic_t operation = string_to_mnemonic(instruction);
+
+    token->opcode = operation;
+    token->flag = 0;
+    token->condition = AL;
+    args = skip_whitespace(args);
+
+    if (operation == LSL) {
+        parse_special(token, args);
+
+    } else if (operation <= CMP) {
+        parse_data_processing(token, args);
+
+    } else if (operation <= MLA) {
+        parse_multiply(token, args);
+
+    } else if (operation <= STR) {
+        parse_transfer(token, args);
+
+    } else if (operation <= B) {
+        parse_branch(token, args);
+
+    } else {
+        printf("Error in parse_general.\n");
+        exit(EXIT_FAILURE);
+    }
+}
+
+/*
+ * returns a pointer to the address of the first non-whitespace character in a string
+ */
+char *skip_whitespace(const char *string) {
+    char *copy_string = (char *) string;
+    while (isspace(*copy)) {
+        strcpy(copy_string, copy_string + 1);
+    }
+    return copy_string;
+}
+
+/*
+ * splits a string by a given separator, replacing it with '\0', like strtok,
+ * but only for a number of  occurences
+ */
+char *split(char **pointers, char separator, unsigned int number_occurrence) {
+    int counter = 0, i = 0;
+    size_t length = strlen(*pointers);
+    while (i < length) {
+        if ((*pointers)[i] == separator) {
+            counter++;
+            if (counter == number_occurrence)break;
+        }
+        i++;
+    }
+    return (*pointers) + i + 1;
+}
+
+/*
+ * splits and stores the pointers in an array
+ */
+char **split_and_store(char **pointers, char *separator, unsigned int number_occurrences) {
+    char **tokens = malloc(sizeof(char *) * (number_occurrences + 1));
+
+    if (tokens == NULL) {
+        printf("buffer allocation failed in split_and_store");
+        exit(EXIT_FAILURE);
+    }
+
+    unsigned int number_tokens = 0;
+    while ((tokens[number_tokens] = strtok(pointers, separator)) != NULL && number_tokens != number_occurrences) {
+        number_tokens++;
+    }
+    if (0) {
+        if (number_occurrences != number_tokens) {
+            printf("the function didn't split enough");
+        }
+    }
+    return tokens;
+}
