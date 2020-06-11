@@ -4,27 +4,36 @@
 
 \begin{document}
 
-\title{ARM Checkpoint... }
-\author{TODO}
+\title{ARM11 - Checkpoint Report}
+\author{Bianca-Mihaela Ganescu, Ioana-Cristina Mocanu, Andrei-Oliviu Sologon, Tudor Udriste}
 
 \maketitle
 
 \section{Group Organisation}
 
-Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor
-incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis
-nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu
-fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in
-culpa qui officia deserunt mollit anim id est laborum.
+Initially, after reading individually the specification, we have discussed our overall understanding and came to an agreement regarding the holistic view of the project. We decided to establish together the structure of our project (files and functions) and to define all the data types that were needed. Then, we implemented the skeleton and the data types. We agreed to split the work between members with half working on the emulator and half on the assembler. Therefore, Bianca and Andrei worked on the implementation of the emulator and Cristina and Tudor on the assembler.  
+
+Even though it might not seem the case, there was a continuous and constant collaboration and communication between the teams. All members were involved along all the milestones for both fairness of work distribution and overall efficiency in understanding the intricate details of the implementation. Bianca and Andrei primarily worked on the emulator, but the others also had an active role in developing the project by redesigning, efficiently modifying functions and helping when assistance was required.  While each working on our parts, we still frequently went through each other's code not only to be aware of every change which was made but also to make certain that the implementation was consistent and coherent in style, definitions and names. 
+
+Our group is working efficiently together and there are no conflicts. We realize it is very important to check one another in order to have the best result. We never thought of choosing a proper leader as we trusted each other and it was easier to coordinate ourselves, as we all have different strengths.  This, the coding in separate files for easier version control and the parallel coding improved our workflow. As we tried to apprehend the topic, we met different difficulties, but we were able to go on and finish our emulator with the wanted results. We do not believe that many changes would be required to be done in the emulator due to the good dialogue between the teams.
 
 \section{Implementation Strategies}
 
-Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor
-incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis
-nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu
-fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in
-culpa qui officia deserunt mollit anim id est laborum.
+\subsection{Emulator Structure}
 
+The structure of our emulator is as follows:
+
+\begin{itemize}
+\item \texttt{emulate.c}: In the main file, we declare and initialize the memory, then follow the three stage pipeline instruction by instruction: fetch, decode, execute. When all the instructions have been executed, we print the machine state. The fetch phase is implemented in the main file.
+\item \texttt{emulator\_processor.c}:  Here we implement the decode and execute phases. The main execute function calls one of four separate functions, according to the instruction type. Each of these functions executes a certain instruction supported by the emulator (data processing, multiply, data transfer and branch). In the execution of the Data Processing instruction, we implement ten separate arithmetic and logical operations functions to be called according to the opcode of the instruction. 
+\item \texttt{decode\_helpers.c}: The file contains utility functions for decoding.
+\item \texttt{define\_structures.h}: Here we declare the structures and types used in the program and model the state of the machine.
+\end{itemize}
+
+\subsection{Implementation of the Assembler}
+
+With regard to the emulator bits that we can reuse for the assembler, we could preserve the structures, enums, constants and other type aliases, to save planning time for data structures design. Moreover, we have determined that a considerable part of the task relies on our implementation of the emulator, in respect of the instructions, the bit manipulation decoding and the shifting operations.
+
+\subsection{Future Challenges and the Extension}
+We successfully completed part one of the assignment and half completed the assembler. We have decided to implement the two-pass assembly because the structure would be clearer and not cause any further complications, as mentioned in the specification.  We do not know exactly what the extension is going to be about. Hence, it is difficult to say what tasks will be strenuous to complete in the future.
 \end{document}
