@@ -248,10 +248,12 @@ static Operand2 parse_operand2(char *operand) {
     } else {
         operand2.immediate = 0;
         operand2.Register.shifted_register.rm = atoi(operand + 1);
-
-        char *shft = strtok(operand," ");
-        if (strcmp(shft, "")) {
+        char *shft;
+        shft = strtok(operand, ",");
+        if (shft != NULL) {
             operand2.Register.shifted_register.shift = parse_shift(skip_whitespace(shft));
+        } else {
+            operand2.Register.shifted_register.shift.type = NO_SHIFT;
         }
     }
     return operand2;
@@ -393,8 +395,8 @@ void parse_general(Token *token, char *instruction) {
     assert(instruction != NULL);
 
     //arguments after opcode
-    char *args = strtok(instruction," ");
-    printf("%s\n",instruction);
+    char *args = strtok(instruction, " ");
+    printf("%s\n", instruction);
     mnemonic_t operation = string_to_mnemonic(instruction);
 
     token->opcode = operation;

@@ -31,49 +31,49 @@ int main(int argc, char **argv) {
     //3. load the assembly instructions
     //4. generate symbol table
 
-    FILE* input;
-    if((input = fopen(filename_source,"r")) == NULL){
-      fprintf(stderr, "Error while opening the file\n");
-      exit(EXIT_FAILURE);
+    FILE *input;
+    if ((input = fopen(filename_source, "r")) == NULL) {
+        fprintf(stderr, "Error while opening the file\n");
+        exit(EXIT_FAILURE);
     }
 
     char line[MAX_LINE_LENGTH];
     label_dict *dict = new_dict();
     int count = 0;
 
-    while(!feof(input)){
-      fgets(line,MAX_LINE_LENGTH,input);
-      int n = strlen(line);
-      if(line[n - 1] == ':'){
-        line[n - 2] = '\0';
-        add(line,count,dict);
-      }
-      count++;
+    while (!feof(input)) {
+        fgets(line, MAX_LINE_LENGTH, input);
+        int n = strlen(line);
+        if (line[n - 1] == ':') {
+            line[n - 2] = '\0';
+            add(line, count, dict);
+        }
+        count++;
     }
 
     // parse file again
-    if((input = fopen(filename_source,"r")) == NULL){
-      fprintf(stderr, "Error while opening the file\n");
-      exit(EXIT_FAILURE);
+    if ((input = fopen(filename_source, "r")) == NULL) {
+        fprintf(stderr, "Error while opening the file\n");
+        exit(EXIT_FAILURE);
     }
 
-    FILE* output;
-    output = fopen(filename_output,"wb");
+    FILE *output;
+    output = fopen(filename_output, "wb");
     uint32_t binary;
     Token token;
-    uint16_t adress = 0;
+    uint16_t address = 0;
 
-    while(!feof(input)){
-      fgets(line,MAX_LINE_LENGTH,input);
-      int n = strlen(line);
-      if(line[n - 1] == ':'){
-        continue;
-      }
-      printf("%s\n",line);
-      parse_general(&token,line);
-      instr_to_bits(&token,dict,adress,&binary);
-      fwrite(&binary,sizeof(uint32_t),1,output);
-      adress+= 4;
+    while (!feof(input)) {
+        fgets(line, MAX_LINE_LENGTH, input);
+        int n = strlen(line);
+        if (line[n - 1] == ':') {
+            continue;
+        }
+        printf("%s\n", line);
+        parse_general(&token, line);
+        instr_to_bits(&token, dict, address, &binary);
+        fwrite(&binary, sizeof(uint32_t), 1, output);
+        address += 4;
     }
 
     return EXIT_SUCCESS;

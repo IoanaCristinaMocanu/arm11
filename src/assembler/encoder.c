@@ -31,7 +31,7 @@
 #define SHIFT_CONST_POS 7
 
 static void to_bits(uint32_t *binary, uint32_t input, int pos) {
-    *binary |= (input << pos);
+    (*binary) |= (input << pos);
 }
 
 void instr_to_bits(Token *token, label_dict *dict, uint16_t address, uint32_t *binary) {
@@ -39,25 +39,20 @@ void instr_to_bits(Token *token, label_dict *dict, uint16_t address, uint32_t *b
     to_bits(binary, token->condition, COND_POS);
     if (token->opcode <= CMP) {
         data_proc_to_bits(token, binary);
-    }
-
-    if (token->opcode <= MLA) {
+    } else if (token->opcode <= MLA) {
         mul_to_bits(token, binary);
-    }
-
-    if (token->opcode <= STR) {
+    } else if (token->opcode <= STR) {
         data_transfer_to_bits(token, address, binary);
-    }
-
-    if (token->opcode <= B) {
+    } else if (token->opcode <= B) {
         branch_to_bits(token, binary, dict);
-    }
-    if (token->opcode <= ANDEQ) {
+    } else if (token->opcode <= ANDEQ) {
         special_to_bits(token, binary, dict);
+    } else {
+        printf("Invalid Token opcode passed to be encoded\n");
+        exit(EXIT_FAILURE);
     }
-    printf("Invalid Token opcode passed to be encoded\n");
-    exit(EXIT_FAILURE);
 }
+
 
 uint32_t rotate_right(uint32_t to_shift, uint8_t ammount) {
     ammount = ammount % 32;
@@ -69,8 +64,11 @@ uint32_t rotate_right(uint32_t to_shift, uint8_t ammount) {
 
 void data_proc_to_bits(Token *token, uint32_t *binary) {
     assert(token != NULL);
-    if (token->Content.data_processing.op2.immediate) { to_bits(binary, 1, IMMEDIATE_POS); } else { binary = 0; }
-    uint8_t opcode;
+    if (token->Content.data_processing.op2.immediate) {
+        to_bits(binary, (uint32_t) 1, IMMEDIATE_POS);
+    }
+    else { *binary = 0x0; }
+    uint32_t opcode;
     switch (token->opcode) {
         case ANDEQ:
         case AND:
@@ -103,9 +101,10 @@ void data_proc_to_bits(Token *token, uint32_t *binary) {
         case MOV:
             opcode = 0xd;
             break;
-        default:
+        default: {
             printf("Invalid Token opcode passed to be encoded\n");
             exit(EXIT_FAILURE);
+        }
     }
     to_bits(binary, opcode, OPCODE_POS);
     (token->opcode == TST || token->opcode == TEQ || token->opcode == CMP)
@@ -199,8 +198,7 @@ void branch_to_bits(Token *token, uint32_t *binary, label_dict *dict) {
 
 void special_to_bits(Token *token, uint32_t *binary, label_dict *dict) { //consider lsl rn <#exp> = mov rn, rn, <#exp>
     assert(token != NULL);
-    uint32_t opcode;
-    opcode = 0xd; //1101
+    uint32_t opcode = 0xd; //1101
     to_bits(binary, opcode, 21);
     to_bits(binary, (uint32_t) token->Content.data_processing.rd, RD_POS);
     //mov rn, rn, lsl <#exp>
