@@ -42,13 +42,14 @@ int main(int argc, char **argv) {
     int count = 0;
 
     while (!feof(input)) {
-        fgets(line, MAX_LINE_LENGTH, input);
-        int n = strlen(line);
-        if (line[n - 1] == ':') {
-            line[n - 2] = '\0';
-            add(line, count, dict);
+        if (fgets(line, MAX_LINE_LENGTH, input)) {
+            int n = strlen(line);
+            if (line[n - 1] == ':') {
+                line[n - 2] = '\0';
+                add(line, count, dict);
+            }
+            count++;
         }
-        count++;
     }
 
     // parse file again
@@ -63,18 +64,24 @@ int main(int argc, char **argv) {
     Token token;
     uint16_t address = 0;
 
-    while (!feof(input)) {
-        fgets(line, MAX_LINE_LENGTH, input);
+    while (!feof(input) && fgets(line, MAX_LINE_LENGTH, input)) {
         int n = strlen(line);
-        if (line[n - 1] == ':') {
+        printf("Length line: %d", n);
+        if (line[n - 2] == ':') {
             continue;
         }
         printf("%s\n", line);
+        printf("%s\n", line);
         parse_general(&token, line);
+        printf("dupa parser: \n");
+        printf("%x\n", binary);
         instr_to_bits(&token, dict, address, &binary);
+        printf("dupa encoder: \n");
+        printf("%x\n", binary);
         fwrite(&binary, sizeof(uint32_t), 1, output);
         address += 4;
     }
+
 
     return EXIT_SUCCESS;
 }

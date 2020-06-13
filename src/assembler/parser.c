@@ -95,14 +95,16 @@ static mnemonic_t string_to_mnemonic(const char *string) {
     if (!strcmp(string, "str")) {
         return STR;
     }
-
+    if (!strcmp(string, "beq")) {
+        return BEQ;
+    }
+    if (!strcmp(string, "bne")) {
+        return BEQ;
+    }
     if (!strcmp(string, "b")) {
         return B;
     }
 
-    if (!strcmp(string, "beq")) {
-        return BEQ;
-    }
 
     if (!strcmp(string, "bge")) {
         return BGE;
@@ -112,16 +114,15 @@ static mnemonic_t string_to_mnemonic(const char *string) {
         return BLT;
     }
 
-    if (!strcmp(string, "bge")) {
-        return BGE;
-    }
-
     if (!strcmp(string, "bgt")) {
         return BGT;
     }
 
     if (!strcmp(string, "ble")) {
         return BLE;
+    }
+    if (!strcmp(string, "b")) {
+        return B;
     }
 
     if (!strcmp(string, "lsl")) {
@@ -178,7 +179,7 @@ static Address parse_address(const char *string_address, Token *token) {
         token->Content.transfer.address.Expression.expression = parse_expression(string_address + 1);
         address.Expression.expression = parse_expression(string_address + 1);
 
-        if (token->Content.transfer.address.Expression.expression >= 256) {
+        if ((uint32_t) token->Content.transfer.address.Expression.expression >= 256) {
             token->flag = 1;
         }
 
@@ -228,7 +229,9 @@ static Address parse_address(const char *string_address, Token *token) {
                 no_shift.type = NO_SHIFT;
                 address.Expression.Register.Offset.Shift.shift = no_shift;
             } else {
+                printf("before shift address\n");
                 address.Expression.Register.Offset.Shift.shift = parse_shift(skip_whitespace(new_shift));
+                printf("after shift address\n");
             }
         }
     }
@@ -241,20 +244,26 @@ static Address parse_address(const char *string_address, Token *token) {
  * parses an operand2 which is either a shifted register or #expression
  */
 static Operand2 parse_operand2(char *operand) {
+    printf("%s\n", operand);
     Operand2 operand2;
     if (operand[0] == '#') {
         operand2.immediate = 1;
+        printf("operand+1: %s\n", operand+1);
         operand2.Register.expression = parse_expression(operand + 1);
+        printf("Valoare exp parser: %d\n", operand2.Register.expression);
     } else {
         operand2.immediate = 0;
         operand2.Register.shifted_register.rm = atoi(operand + 1);
-        char *shft;
-        shft = strtok(operand, ",");
-        if (shft != NULL) {
-            operand2.Register.shifted_register.shift = parse_shift(skip_whitespace(shft));
-        } else {
-            operand2.Register.shifted_register.shift.type = NO_SHIFT;
-        }
+//        char *shft;
+//        shft = strtok(operand, ",");
+//        if (shft != NULL) {
+//            printf("before shift op2\n");
+//            printf("%s\n", shft);
+//            operand2.Register.shifted_register.shift = parse_shift(skip_whitespace(shft));
+//            printf("after shift op2\n");
+//        } else {
+//            operand2.Register.shifted_register.shift.type = NO_SHIFT;
+//        }
     }
     return operand2;
 }
@@ -287,6 +296,7 @@ static void parse_data_processing(Token *token, const char *string) {
             token->Content.data_processing.rd = atoi(copy_string + 1);
             token->Content.data_processing.rn = atoi(copy_string + 4);
     }
+    printf("Op2 in data proc parser: %s\n", operand2);
     token->Content.data_processing.op2 = parse_operand2(skip_whitespace(operand2));
     free(copy_string);
 }
@@ -320,13 +330,10 @@ static void parse_special(Token *token, const char *string) {
  */
 static int parse_expression(const char *expression) {
 
-    if (!strncmp(expression, "-", 1)) {
-        if (!strncmp(expression + 1, "0x", 2)) {
-            return -strtol(expression + 3, NULL, 16);
-        } else {
-            return -strtol(expression + 1, NULL, 10);
-        }
-    }
+//    if (!strncmp(expression, "-", 1)) {
+//        return -parse_expression(expression + 1);
+//    }
+
     if (!strncmp(expression, "0x", 2)) {  //HEX
         return strtol(expression + 2, NULL, 16);
     } else { return strtol(expression, NULL, 10); }  //DECIMAL
@@ -349,7 +356,7 @@ static shift_t string_to_shift(const char *string) {
     if (!strcmp(string, "ror")) {
         return SHIFT_ROR;
     }
-
+    printf("String_to_shift exit");
     exit(EXIT_FAILURE);
 }
 
@@ -374,12 +381,21 @@ static Shift parse_shift(const char *shift) {
 
 static void parse_multiply(Token *token, const char *string_multiply) {
     char *copy_multiply = calloc(strlen(string_multiply) + 1, sizeof(char));
-    strcpy(copy_multiply, string_multiply);
 
+    strcpy(copy_multiply, string_multiply);
+    printf("string_multiply: ");
+    printf("%s\n", string_multiply);
     char **tokens = split_and_store(copy_multiply, ",", 3);
+    printf("token 0, 1 ,2: \n");
+    printf("%s\n", tokens[0]);
+    printf("%s\n", tokens[1]);
+    printf("%s\n", tokens[2]);
     token->Content.multiply.rd = atoi(tokens[0] + 1);
     token->Content.multiply.rm = atoi(tokens[1] + 1);
     token->Content.multiply.rs = atoi(tokens[2] + 1);
+    char *p = "r12";
+    int n = atoi(p + 1);
+    printf("Val of n: %d\n", n);
 
     if (token->opcode == MLA) {
         token->Content.multiply.rn = atoi(tokens[3] + 1);
@@ -395,8 +411,11 @@ void parse_general(Token *token, char *instruction) {
     assert(instruction != NULL);
 
     //arguments after opcode
-    char *args = strtok(instruction, " ");
-    printf("%s\n", instruction);
+    // char *args = strtok(instruction, " ");
+    char *args = split(instruction, ' ', 1);
+    printf("args after split: ");
+    printf("%s\n", args);
+    //  printf("%s\n", instruction);
     mnemonic_t operation = string_to_mnemonic(instruction);
 
     token->opcode = operation;
@@ -450,6 +469,7 @@ static char *split(char *pointers, char separator, unsigned int number_occurrenc
         }
         i++;
     }
+    pointers[i] = '\0';
     return (pointers) + i + 1;
 }
 
@@ -463,11 +483,12 @@ static char **split_and_store(char *pointers, char *separator, unsigned int numb
         printf("buffer allocation failed in split_and_store");
         exit(EXIT_FAILURE);
     }
-
     unsigned int number_tokens = 0;
-    while ((tokens[number_tokens] = strtok(pointers, separator)) != NULL &&
+    tokens[number_tokens] = strtok(pointers, separator);
+    while (tokens[number_tokens] != NULL &&
            number_tokens != number_occurrences) {
         number_tokens++;
+        tokens[number_tokens] = split(tokens[number_tokens - 1], ',', 1);
     }
     if (0) {
         if (number_occurrences != number_tokens) {

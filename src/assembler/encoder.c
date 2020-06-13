@@ -66,8 +66,7 @@ void data_proc_to_bits(Token *token, uint32_t *binary) {
     assert(token != NULL);
     if (token->Content.data_processing.op2.immediate) {
         to_bits(binary, (uint32_t) 1, IMMEDIATE_POS);
-    }
-    else { *binary = 0x0; }
+    } else { *binary = 0x0; }
     uint32_t opcode;
     switch (token->opcode) {
         case ANDEQ:
@@ -107,6 +106,7 @@ void data_proc_to_bits(Token *token, uint32_t *binary) {
         }
     }
     to_bits(binary, opcode, OPCODE_POS);
+    to_bits(binary, 0xe, 28);
     (token->opcode == TST || token->opcode == TEQ || token->opcode == CMP)
     ? to_bits(binary, 1, SET_COND_POS)
     : to_bits(binary, token->Content.data_processing.rd, RD_POS);
@@ -127,9 +127,9 @@ void data_proc_to_bits(Token *token, uint32_t *binary) {
         } else {
             to_bits(binary, (uint32_t) exp, OP2_POS);
         }
-    } else {
+    printf("Valoare exp in encoder: %d\n", exp);} else {
         to_bits(binary, (uint32_t) token->Content.data_processing.op2.Register.shifted_register.rm, OP2_POS);
-        if (!token->Content.data_processing.op2.Register.shifted_register.shift.format) { //register
+        if (!token->Content.data_processing.op2.Register.shifted_register.shift.format) {
             shift_t type = token->Content.data_processing.op2.Register.shifted_register.shift.type;
             to_bits(binary, (uint32_t) type, SHIFT_T_POS);
             if (!(token->Content.data_processing.op2.Register.shifted_register.shift.type == NO_SHIFT)) {
@@ -145,9 +145,22 @@ void mul_to_bits(Token *token, uint32_t *binary) {
     assert(token != NULL);
     to_bits(binary, 9, 4); //for 1001 in bits 4-7 in mul instruction
     to_bits(binary, (uint32_t) token->Content.multiply.rd, RD_POS_MUL);
+    printf("mul_to_bits print:\n");
+    printf("%x", token->Content.multiply.rd);
+    printf("\n");
+    printf("%x", token->Content.multiply.rn);
+    printf("\n");
+    printf("%x", token->Content.multiply.rs);
+    printf("\n");
+    printf("%x", token->Content.multiply.rm);
+    printf("\n");
+    printf("%x\n", *binary);
     to_bits(binary, (uint32_t) token->Content.multiply.rn, RN_POS_MUL);
+    printf("%x\n", *binary);
     to_bits(binary, (uint32_t) token->Content.multiply.rs, RS_POS_MUL);
+    printf("%x\n", *binary);
     to_bits(binary, (uint32_t) token->Content.multiply.rm, RM_POS_MUL);
+    printf("%x\n", *binary);
     if (token->opcode == MLA) {
         to_bits(binary, 1, ACCUMULATE_POS); //set accumulate bit
     }
