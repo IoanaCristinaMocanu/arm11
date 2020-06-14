@@ -8,8 +8,12 @@
 #include <stdint.h>
 
 #define ARM11_18_DEFINE_TYPES_H
-#define MEMORY_SIZE 64000
-#define GENERAL_REGISTERS_NUM 13
+#define MEMORY_SIZE (1 << 16)
+#define GENERAL_REGISTERS_NUM 15
+
+#define SP_REG 13
+#define LR_REG 14
+#define PC_REG 15
 
 #define PIPELINE_OFFSET 8
 
@@ -18,9 +22,11 @@ struct Machine {
 	uint32_t general_reg[GENERAL_REGISTERS_NUM];
 	uint32_t cpsr_reg;
 	uint32_t pc_reg;
+	uint32_t sp_reg; // stack pointer
 	bool end;
 	bool branch_executed;
 	uint8_t shifter_carry;
+	uint32_t stack_limit;
 };
 typedef struct Machine Machine;
 
@@ -42,6 +48,7 @@ enum type {
 	MUL,
 	TRANSFER,
 	BRANCH,
+	MULTI_TRANSFER,
 	NOOP = 0xffff // was 0xffffffff but enum should be int (32 bit)
 };
 struct Decoded_Instr {
@@ -62,14 +69,19 @@ struct Decoded_Instr {
 	uint32_t rm;
 	uint32_t rs;
 
-	// single data transfer
+	// data transfer
 	bool imm;
 	bool pre_index;
+	bool write_back; // both transfers
 	bool load;
 	bool up;
 
 	// branch
 	int32_t sgn_offset;
+
+	// stack
+	uint16_t register_list;
+
 };
 typedef struct Decoded_Instr Decoded_Instr;
 

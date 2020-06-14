@@ -43,6 +43,7 @@ int main(int argc, char **argv) {
 	// -- byte-by-byte and then divide count by 4
 
 	int instr_count = 0;
+	arm.general_reg[SP_REG] = MEMORY_SIZE - 1;
 
 	// Functions pointer array
 
@@ -59,6 +60,8 @@ int main(int argc, char **argv) {
 	}
 
 	instr_count = ceil(instr_count / 4);
+
+	arm.stack_limit = instr_count * 4 + 1;
 
 	// -- Start the pipeline
 	// -- initialise all 3 stages to NULL

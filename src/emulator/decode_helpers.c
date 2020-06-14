@@ -32,6 +32,7 @@
 
 //for Single Data Transfer ONLY
 #define P_INDEXING_MASK 1 << 24
+#define WB_MASK 1 << 25
 #define UP_MASK 1 << 23
 #define LOAD_MASK 1 << 20
 #define OFFSET_TRANSFER_MASK 0xfff // for bits 0-11
@@ -76,7 +77,10 @@ enum type get_instr_type(Instr *instruction) {
 		return HALT;
 	}
 	if ((1 << 27) & instruction->bits) {
-		return BRANCH;
+		if((1 << 25) & instruction->bits) {
+			return BRANCH;
+		}
+		return MULTI_TRANSFER;
 	}
 	if ((1 << 26) & instruction->bits) {
 		return TRANSFER;
@@ -165,6 +169,10 @@ bool is_immediate(Instr *instruction) {
 	return (IMMEDIATE_MASK & instruction->bits);
 }
 
+bool is_write_back(Instr *instruction) {
+	return (WB_MASK & instruction->bits);
+}
+
 // return Rn
 uint32_t get_rn(Instr *instruction) {
 	return ((RN_MASK << RN_POS) & instruction->bits) >> RN_POS;
@@ -173,6 +181,12 @@ uint32_t get_rn(Instr *instruction) {
 // return Rd
 uint32_t get_rd(Instr *instruction) {
 	return ((RD_MASK << RD_POS) & instruction->bits) >> RD_POS;
+}
+
+// return Register List
+
+uint16_t get_register_list(Instr *instruction){
+	return (OFFSET_TRANSFER_MASK) &instruction->bits;
 }
 
 
@@ -270,6 +284,8 @@ void print_instr(Decoded_Instr *instr){
 		printf("COND:%x",instr->cond);
 		printf("OFFSET:%x ",instr->offset);
 		return;
+	case MULTI_TRANSFER:
+		return;
 	case NOOP:
 		return;
 	}
@@ -279,9 +295,11 @@ void print_instr(Decoded_Instr *instr){
 
 void print_machine_status(Machine *arm){
 	printf("Registers:\n");
-	for(int i = 0; i < GENERAL_REGISTERS_NUM; i++) {
+	for(int i = 0; i < 13; i++) {
 		printf("$%-2d : %10d (0x%08x)\n",i,arm->general_reg[i],arm->general_reg[i]);
 	}
+	printf("SP  : %*d (0x%08x)\n",10,arm->general_reg[SP_REG],arm->general_reg[SP_REG]);
+	printf("LR  : %*d (0x%08x)\n",10,arm->general_reg[LR_REG],arm->general_reg[LR_REG]);
 	printf("PC  : %*d (0x%08x)\n",10,arm->pc_reg,arm->pc_reg);
 	printf("CPSR: %*d (0x%08x)\n",10,arm->cpsr_reg,arm->cpsr_reg);
 //	printf("CARRY: (0x%08x)\n",arm->shifter_carry);
