@@ -219,12 +219,15 @@ void branch_to_bits(Token *token, uint32_t *binary, label_dict *dict) {
 
 void special_to_bits(Token *token, uint32_t *binary, label_dict *dict) { //consider lsl rn <#exp> = mov rn, rn, <#exp>
     assert(token != NULL);
-    uint32_t opcode = 0xd;   //1101
-    to_bits(binary, opcode, 21);
-    to_bits(binary, (uint32_t) token->Content.data_processing.rd, RD_POS);
-    //mov rn, rn, lsl <#exp>
-    to_bits(binary, (uint32_t) token->Content.data_processing.rd, 0);
-    to_bits(binary, (uint32_t) token->Content.data_processing.op2.Register.expression, 7);
+    if (token->opcode == ANDEQ) { to_bits(binary, 0, 0); }
+    else {
+        uint32_t opcode = 0xd;   //1101
+        to_bits(binary, opcode, 21);
+        to_bits(binary, (uint32_t) token->Content.data_processing.rd, RD_POS);
+        //mov rn, rn, lsl <#exp>
+        to_bits(binary, (uint32_t) token->Content.data_processing.rd, 0);
+        to_bits(binary, (uint32_t) token->Content.data_processing.op2.Register.expression, 7);
+    }
 }
 
 void address_to_bits(Address address, uint32_t *binary) {

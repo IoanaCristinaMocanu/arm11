@@ -194,7 +194,7 @@ static Address parse_address(const char *string_address, Token *token) {
     }
 
     char *copy_address = calloc(strlen(string_address) + 1, sizeof(char));
-    strcpy(copy_address, string_address + 1);
+    strcpy(copy_address, string_address + 1); //skip '['
 
     char *rm_expression = split(copy_address, ',', 1);
     rm_expression = skip_whitespace(rm_expression);
@@ -219,7 +219,7 @@ static Address parse_address(const char *string_address, Token *token) {
             }
             address.Expression.Register.Offset.Shift.pm = 0;
 
-            address.Expression.Register.Offset.Shift.rm = atoi(skip_whitespace(rm_expression) + 1);
+            address.Expression.Register.Offset.Shift.rm = (unsigned int) atoi(skip_whitespace(rm_expression) + 1);
 
             char *new_shift = split(rm_expression, ',', 1);
 
@@ -306,11 +306,10 @@ static void parse_transfer(Token *token, const char *string_transfer) {
     printf("rd in transfer: %d", token->Content.transfer.rd);
     char *copy_transfer = calloc(strlen(string_transfer) + 1, sizeof(char));
     strcpy(copy_transfer, string_transfer);
-    char *copy_transfer_split = calloc(strlen(copy_transfer) + 1, sizeof(char));
-    strcpy(copy_transfer_split, split(copy_transfer, ',', 1));
+    char *copy_transfer_split = split(copy_transfer, ',', 1);
     token->Content.transfer.address = parse_address(skip_whitespace(copy_transfer_split), token);
     printf("address in transfer: %d", token->Content.transfer.address.format);
-    free(copy_transfer_split);
+    free(copy_transfer);
 }
 
 /*
@@ -427,6 +426,10 @@ void parse_general(Token *token, char *instruction) {
     args = skip_whitespace(args);
 
     if (operation == LSL) {
+        parse_special(token, args);
+
+    } else if (operation == ANDEQ) {
+        token->condition = EQ;
         parse_special(token, args);
 
     } else if (operation <= CMP) {
