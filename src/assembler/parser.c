@@ -99,7 +99,7 @@ static mnemonic_t string_to_mnemonic(const char *string) {
         return BEQ;
     }
     if (!strcmp(string, "bne")) {
-        return BEQ;
+        return BNE;
     }
     if (!strcmp(string, "b")) {
         return B;
@@ -140,7 +140,6 @@ static mnemonic_t string_to_mnemonic(const char *string) {
 static void parse_branch(Token *token, const char *label) {
     assert(token != NULL);
     assert(label != NULL);
-
     switch (token->opcode) {
         case B:
             token->condition = AL;
@@ -167,7 +166,6 @@ static void parse_branch(Token *token, const char *label) {
             printf("Unexpected opcode");
             exit(EXIT_FAILURE);
     }
-
     token->Content.branch.expression = (char *) label;
 }
 
@@ -210,6 +208,7 @@ static Address parse_address(const char *string_address, Token *token) {
         if (rm_expression[0] == '#') {
             address.Expression.Register.format = 0;
             address.Expression.expression = parse_expression(skip_whitespace(rm_expression) + 1);
+            printf("expression in parse data proc: %d", address.Expression.expression);
         } else { //shifted register
             address.Expression.Register.format = 1;
 
@@ -248,7 +247,7 @@ static Operand2 parse_operand2(char *operand) {
     Operand2 operand2;
     if (operand[0] == '#') {
         operand2.immediate = 1;
-        printf("operand+1: %s\n", operand+1);
+        printf("operand+1: %s\n", operand + 1);
         operand2.Register.expression = parse_expression(operand + 1);
         printf("Valoare exp parser: %d\n", operand2.Register.expression);
     } else {
@@ -298,16 +297,19 @@ static void parse_data_processing(Token *token, const char *string) {
     }
     printf("Op2 in data proc parser: %s\n", operand2);
     token->Content.data_processing.op2 = parse_operand2(skip_whitespace(operand2));
+    printf("Op2.expression in data proc parser: %d\n", token->Content.data_processing.op2.Register.expression);
     free(copy_string);
 }
 
 static void parse_transfer(Token *token, const char *string_transfer) {
-    token->Content.transfer.rd = atoi(string_transfer);
-
+    token->Content.transfer.rd = (unsigned int) atoi(string_transfer + 1);
+    printf("rd in transfer: %d", token->Content.transfer.rd);
     char *copy_transfer = calloc(strlen(string_transfer) + 1, sizeof(char));
     strcpy(copy_transfer, string_transfer);
-    char *copy_transfer_split = split(copy_transfer, ',', 1);
+    char *copy_transfer_split = calloc(strlen(copy_transfer) + 1, sizeof(char));
+    strcpy(copy_transfer_split, split(copy_transfer, ',', 1));
     token->Content.transfer.address = parse_address(skip_whitespace(copy_transfer_split), token);
+    printf("address in transfer: %d", token->Content.transfer.address.format);
     free(copy_transfer_split);
 }
 
@@ -330,9 +332,9 @@ static void parse_special(Token *token, const char *string) {
  */
 static int parse_expression(const char *expression) {
 
-//    if (!strncmp(expression, "-", 1)) {
-//        return -parse_expression(expression + 1);
-//    }
+    if (!strncmp(expression, "-", 1)) {
+        return -parse_expression(expression + 1);
+    }
 
     if (!strncmp(expression, "0x", 2)) {  //HEX
         return strtol(expression + 2, NULL, 16);
@@ -414,11 +416,12 @@ void parse_general(Token *token, char *instruction) {
     // char *args = strtok(instruction, " ");
     char *args = split(instruction, ' ', 1);
     printf("args after split: ");
-    printf("%s\n", args);
+    printf("%sdf\n", args);
     //  printf("%s\n", instruction);
     mnemonic_t operation = string_to_mnemonic(instruction);
 
     token->opcode = operation;
+    printf("condition is %d\n", operation);
     token->flag = 0;
     token->condition = AL;
     args = skip_whitespace(args);
