@@ -62,6 +62,9 @@ int32_t get_offset_BRANCH(Instr *instruction);
 //check Immediate bit
 bool is_immediate(Instr *instruction);
 
+// check write-back bit
+bool is_write_back(Instr *instruction);
+
 //return Rn
 uint32_t get_rn(Instr *instruction);
 
@@ -72,6 +75,9 @@ uint32_t get_rd(Instr *instruction);
 // FOR DATA PROCESSING AND SINGLE DATA TRANSFER ONLY
 // check Set Condition Codes bit
 bool is_set(Instr *instruction);
+
+// Multiple Data Transfer
+uint16_t get_register_list(Instr *instruction);
 
 // -- decodes the shifted register value provided in data processing
 // and data transfer instructions
