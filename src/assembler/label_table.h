@@ -4,8 +4,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include "constants.h"
-
+#define MAX_LINE_LENGTH 512
 typedef struct {
     char label[MAX_LINE_LENGTH];
     uint16_t address;

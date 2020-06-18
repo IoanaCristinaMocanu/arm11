@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "constants.h"
 #include "label_table.h"
 #include "encoder.h"
 #include "parser.h"
@@ -15,7 +14,7 @@
  * 5. binary encoding + save the files
  * 6. free the memory + exit
  */
-
+#define MAX_LINE_LENGTH 512
 int main(int argc, char **argv) {
 
 	//1. verify the number of passed arguments

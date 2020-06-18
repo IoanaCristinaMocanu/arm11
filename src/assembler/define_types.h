@@ -78,8 +78,7 @@ typedef struct {
 typedef struct {
 	bool immediate;
 	union {
-		//uint8_t expression;
-		int expression;
+		int  expression;
 		struct {
 			uint8_t rm;
 			Shift shift;
