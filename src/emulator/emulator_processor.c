@@ -282,7 +282,7 @@ void branch(Decoded_Instr *instr, Machine *arm) {
 }
 
 void multi_transfer(Decoded_Instr *instr,Machine *arm) {
-	uint16_t address = arm->general_reg[instr->rn];
+	uint32_t address = arm->general_reg[instr->rn];
 	uint16_t reg_list = instr->register_list;
 	uint16_t cp_list = reg_list;
 	uint8_t num = 0;
@@ -309,16 +309,20 @@ void multi_transfer(Decoded_Instr *instr,Machine *arm) {
 		}
 	}
 
-	if(top >= MEMORY_SIZE || bottom <= arm->stack_limit) {
+	if(!instr->up) {
+		address = address - 4 * num;
+	}
+
+	if(top > MEMORY_SIZE || bottom <= arm->stack_limit) {
 		fprintf(stderr, "Error: Illegal memory access: stack limit exceeded");
 		exit(EXIT_FAILURE);
 	}
 
-	if(!instr->up) {
-		address -= 4 * num;
-	}
-
 	num = 0;
+
+	if(instr->up) {
+		instr->pre_index = !instr->pre_index;
+	}
 
 	while(reg_list) {
 		if(reg_list & 1) {
@@ -331,18 +335,14 @@ void multi_transfer(Decoded_Instr *instr,Machine *arm) {
 					address+=4;
 				}
 			}
-			if(instr->load) {
+			else {
 				if(instr->pre_index) {
 					address+=4;
-					memcpy(&arm->memory[address], &arm->general_reg[instr->rd], sizeof(uint32_t));
+					memcpy(&arm->memory[address], &arm->general_reg[num], sizeof(uint32_t));
 				} else {
-					memcpy(&arm->memory[address], &arm->general_reg[instr->rd], sizeof(uint32_t));
+					memcpy(&arm->memory[address], &arm->general_reg[num], sizeof(uint32_t));
 					address+=4;
 				}
-			}
-
-			if(instr->write_back) {
-				arm->general_reg[instr->rn] = address;
 			}
 		}
 		reg_list >>=1;
@@ -359,7 +359,6 @@ void execute(Decoded_Instr *instr, Machine *arm, ProcFunc data_proc_func[14]) {
 	if (!check_condition(arm, instr)) {
 		return;
 	}
-//	printf("CONDITION PASSED!");
 
 	switch (instr->type) {
 	case DATA_PROC:
@@ -373,6 +372,9 @@ void execute(Decoded_Instr *instr, Machine *arm, ProcFunc data_proc_func[14]) {
 		return;
 	case BRANCH:
 		branch(instr, arm);
+		return;
+	case MULTI_TRANSFER:
+		multi_transfer(instr,arm);
 		return;
 	case NOOP:
 		return;

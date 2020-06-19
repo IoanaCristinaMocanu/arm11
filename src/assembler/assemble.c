@@ -51,6 +51,7 @@ int main(int argc, char **argv) {
 		if (line[n - 2] == ':') {
 			line[n - 2] = '\0';
 			add(line, count, dict);
+			continue;
 		}
 		count++;
 		if(strncmp(line,"ldr",3)) {

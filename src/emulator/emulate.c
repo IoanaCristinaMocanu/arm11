@@ -3,16 +3,19 @@
 #include <string.h>
 #include <stdint.h>
 #include <math.h>
+#include <stdbool.h>
 
 #include "emulator_processor.h"
 #include "decode_helpers.h"
 #include "define_structures.h"
+
 
 int main(int argc, char **argv) {
 
 	// Argument check and file read
 	//
 	FILE *input;
+	bool stack_mode = false;
 
 	if (argc != 2) {
 		fprintf(stderr,"Invalid argument number");
@@ -23,6 +26,11 @@ int main(int argc, char **argv) {
 			fprintf(stderr,"File could not be found");
 			exit(EXIT_FAILURE);
 		}
+	}
+
+	int n = strlen(argv[1]);
+	if(strncmp("stack",&argv[1][n - 7],5) == 0) {
+		stack_mode = true;
 	}
 
 	// -- Declaration and initialization of memory and registers storage
@@ -43,7 +51,7 @@ int main(int argc, char **argv) {
 	// -- byte-by-byte and then divide count by 4
 
 	int instr_count = 0;
-	arm.general_reg[SP_REG] = MEMORY_SIZE - 1;
+	arm.general_reg[SP_REG] = MEMORY_SIZE;
 
 	// Functions pointer array
 
@@ -74,8 +82,8 @@ int main(int argc, char **argv) {
 	while(!arm.end) {
 		if(decoded_instr.exists) {
 			execute(&decoded_instr,&arm,data_proc_func); // <- execute previously decoded instruction
-			//print_machine_status(&arm);
-			//print_instr(&decoded_instr);
+			//		print_machine_status(&arm,stack_mode);
+			//		print_instr(&decoded_instr);
 			//printf("\n\n\n");
 			if(arm.end) {
 				break; // <- exit loop if halt instruction was executed
@@ -99,7 +107,7 @@ int main(int argc, char **argv) {
 		fetched_instr.exists = true;
 
 		if(fetched_instr.exists && fetched_instr.bits) {
-//			print_bits(fetched_instr.bits);
+			//		print_bits(fetched_instr.bits);
 		}
 		arm.pc_reg += 4;
 	}
@@ -107,7 +115,7 @@ int main(int argc, char **argv) {
 	// -- Print the final machine state
 	// --
 
-	print_machine_status(&arm);
+	print_machine_status(&arm,stack_mode);
 
 	return EXIT_SUCCESS;
 }

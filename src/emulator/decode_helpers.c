@@ -32,7 +32,7 @@
 
 //for Single Data Transfer ONLY
 #define P_INDEXING_MASK 1 << 24
-#define WB_MASK 1 << 25
+#define WB_MASK 1 << 21
 #define UP_MASK 1 << 23
 #define LOAD_MASK 1 << 20
 #define OFFSET_TRANSFER_MASK 0xfff // for bits 0-11
@@ -285,6 +285,16 @@ void print_instr(Decoded_Instr *instr){
 		printf("OFFSET:%x ",instr->offset);
 		return;
 	case MULTI_TRANSFER:
+		printf("MULTI TRANSFER\n");
+		printf("COND:%x ",instr->cond);
+		printf("RN:%x ",instr->rn);
+		printf("IMM:%x ",instr->imm);
+		printf("PRE:%x ",instr->pre_index);
+		printf("WB:%x ",instr->write_back);
+		printf("LOAD:%x ",instr->load);
+		printf("UP:%x ",instr->up);
+		printf("REGLIST: ");
+		print_bits(instr->register_list);
 		return;
 	case NOOP:
 		return;
@@ -293,27 +303,43 @@ void print_instr(Decoded_Instr *instr){
 
 // print machine status according to test format
 
-void print_machine_status(Machine *arm){
+void print_machine_status(Machine *arm,bool stack_mode){
 	printf("Registers:\n");
 	for(int i = 0; i < 13; i++) {
 		printf("$%-2d : %10d (0x%08x)\n",i,arm->general_reg[i],arm->general_reg[i]);
 	}
-	printf("SP  : %*d (0x%08x)\n",10,arm->general_reg[SP_REG],arm->general_reg[SP_REG]);
-	printf("LR  : %*d (0x%08x)\n",10,arm->general_reg[LR_REG],arm->general_reg[LR_REG]);
+	if(stack_mode) {
+		printf("SP  : %*u (0x%08x)\n",10,arm->general_reg[SP_REG],arm->general_reg[SP_REG]);
+		printf("LR  : %*u (0x%08x)\n",10,arm->general_reg[LR_REG],arm->general_reg[LR_REG]);
+	}
 	printf("PC  : %*d (0x%08x)\n",10,arm->pc_reg,arm->pc_reg);
 	printf("CPSR: %*d (0x%08x)\n",10,arm->cpsr_reg,arm->cpsr_reg);
 //	printf("CARRY: (0x%08x)\n",arm->shifter_carry);
 
 	int val;
 	printf("Non-zero memory:\n");
-	for(int i = 0; i < MEMORY_SIZE / 4; i++) {
-		memcpy(&val,&arm->memory[4 * i],4);
-		uint8_t b0 = arm->memory[4 * i];
-		uint8_t b1 = arm->memory[4 * i + 1];
-		uint8_t b2 = arm->memory[4 * i + 2];
-		uint8_t b3 = arm->memory[4 * i + 3];
-		if(val) {
-			printf("0x%08x: 0x%02x%02x%02x%02x\n",4*i,b0,b1,b2,b3);
+	if(!stack_mode) {
+		for(int i = 0; i < MEMORY_SIZE / 4; i++) {
+			memcpy(&val,&arm->memory[4 * i],4);
+			uint8_t b0 = arm->memory[4 * i];
+			uint8_t b1 = arm->memory[4 * i + 1];
+			uint8_t b2 = arm->memory[4 * i + 2];
+			uint8_t b3 = arm->memory[4 * i + 3];
+			if(val) {
+				printf("0x%08x: 0x%02x%02x%02x%02x\n",4*i,b0,b1,b2,b3);
+			}
+		}
+	}
+	else {
+		for(int i = MEMORY_SIZE / 4 - 1; i >= 0; i--) {
+			memcpy(&val,&arm->memory[4 * i],4);
+			uint8_t b0 = arm->memory[4 * i];
+			uint8_t b1 = arm->memory[4 * i + 1];
+			uint8_t b2 = arm->memory[4 * i + 2];
+			uint8_t b3 = arm->memory[4 * i + 3];
+			if(val) {
+				printf("0x%08x: 0x%02x%02x%02x%02x\n",4*i,b0,b1,b2,b3);
+			}
 		}
 	}
 }

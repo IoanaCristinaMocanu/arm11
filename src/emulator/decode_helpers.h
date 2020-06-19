@@ -92,6 +92,6 @@ void print_bits(uint32_t val);
 
 void print_instr(Decoded_Instr *instr);
 
-void print_machine_status(Machine *arm);
+void print_machine_status(Machine *arm,bool stack_mode);
 
 #endif //ARM11_18_DECODE_HELPERS_H

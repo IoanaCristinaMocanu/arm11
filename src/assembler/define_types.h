@@ -7,6 +7,13 @@
 typedef uint16_t address_t;
 typedef uint32_t instr;
 
+typedef enum {
+	FD,
+	ED,
+	FA,
+	EA
+} characteristics_t;
+
 /*
  * enum to represent the mnemonic types
  */
@@ -33,7 +40,9 @@ typedef enum {
 	BLE,
 	B,
 	LSL,
-	ANDEQ
+	ANDEQ,
+	LDM,
+	STM
 } mnemonic_t;
 
 /*
@@ -78,7 +87,7 @@ typedef struct {
 typedef struct {
 	bool immediate;
 	union {
-		int  expression;
+		int expression;
 		struct {
 			uint8_t rm;
 			Shift shift;
@@ -118,7 +127,6 @@ typedef struct {
 typedef struct {
 	uint16_t address;
 	mnemonic_t opcode;
-//    unsigned char num_args;
 	bool flag;
 	condition_t condition;
 	union {
@@ -140,6 +148,15 @@ typedef struct {
 		struct {
 			char *expression;
 		} branch;
+		struct {
+			characteristics_t characteristic;
+			uint8_t rn;
+			uint8_t register_list[16];
+			int pre_post_index;
+			int up_down_bit;
+			int write_back_bit;
+			int load_store_bit;
+		} block_data_transfer;
 	} Content;
 } Token;
 
